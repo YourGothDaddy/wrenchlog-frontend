@@ -66,6 +66,19 @@ function VehicleDashboardView( {vehicles} ) {
             .catch(error => console.error('Error saving service entry:', error))
     }
 
+    const handleDeleteServiceLog = (serviceLogId) => {
+        fetch(`http://localhost:8080/api/services/${serviceLogId}`, {
+            method: 'DELETE'
+        })
+            .then(response => {
+                if(!response.ok) throw new Error('Failed to delete log record')
+            })
+            .then(() => {
+                fetchServiceLogs()
+            })
+            .catch(error => console.error('Error deleting service entry:', error))
+    }
+
     if (loading) return <div style={{ padding: '20px' }}>Loading workspace panel...</div>
     if (!vehicle) return <div style={{ padding: '20px' }}><p>Vehicle not found.</p><button onClick={() => navigate('/')}>Back to Garage</button></div>
 
@@ -114,6 +127,14 @@ function VehicleDashboardView( {vehicles} ) {
                                 <td style={{ padding: '10px', border: '1px solid #ddd' }}>{log.description}</td>
                                 <td style={{ padding: '10px', border: '1px solid #ddd' }}>{log.kilometersAtService.toLocaleString()} km</td>
                                 <td style={{ padding: '10px', border: '1px solid #ddd' }}>€{log.cost.toFixed(2)}</td>
+                                <td style={{ padding: '10px', border: '1px solid #ddd' }}> <button onClick={() => handleDeleteServiceLog(log.id)} style={{
+                                    backgroundColor: '#dc3545',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '5px 10px',
+                                    cursor: 'pointer',
+                                    borderRadius: '4px'
+                                }} >Delete</button></td>
                             </tr>
                         ))}
                         </tbody>
