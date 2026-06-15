@@ -50,14 +50,30 @@ function GarageView({ vehicles, loading, fetchGarage, userId }){
         fetch(`http://localhost:8080/api/catalog/generations?make=${encodeURIComponent(selectedMake)}&model=${encodeURIComponent(selectedModel)}`)
             .then(res => {
                 if(!res.ok) throw new Error(`HTTP error fetching models: ${res.status}`);
-                return res.sjon();
+                return res.json();
             })
             .then(data => {
-                setGenerations(data)
+                if(Array.isArray(data)){
+                    const realGenerations = data.filter(gen => gen && gen.trim() !== "" && gen.toUpperCase() !== "N/A");
+                    setGenerations(data);
+
+                    if(realGenerations.length === 0 && data.length > 0){
+                        setSelectedGeneration(data[0]);
+                    }else {
+                        setSelectedGeneration('');
+                    }
+                }else{
+                    setGenerations([]);
+                    setSelectedGeneration('')
+                }
                 setModifications([])
-                setSelectedGeneration('')
                 setSelectedModification(null)
                 setYear('')
+            })
+            .catch(err => {
+                console.error('Error fetching generations:', err);
+                setGenerations([]);
+                setSelectedGeneration('');
             })
     }, [selectedModel, selectedMake])
 
@@ -152,9 +168,18 @@ function GarageView({ vehicles, loading, fetchGarage, userId }){
                         {models.map(m => <option key={m} value={m}>{m}</option>)}
                     </select>
 
-                    <select value={selectedGeneration} onChange={e => setSelectedGeneration(e.target.value)} disabled={!selectedModel} required style={{ padding: '8px' }}>
-                        <option value="">Select Generation</option>
-                        {generations.map(g => <option key={g} value={g}>{g}</option>)}
+                    <select value={selectedGeneration}
+                            onChange={e => setSelectedGeneration(e.target.value)}
+                            disabled={!selectedModel && generations.length <= 1}
+                            required style={{ padding: '8px' }}>
+                        {generations.length <= 1 ? (
+                            <option value={selectedGeneration}>No Generation Available</option>
+                        ) : (
+                            <>
+                                <option value="">Select Generation</option>
+                                {generations.map(g => <option key={g} value={g}>{g}</option>)}
+                            </>
+                        )}
                     </select>
 
                     <select
