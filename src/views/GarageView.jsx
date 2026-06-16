@@ -100,8 +100,23 @@ function GarageView({ vehicles, loading, fetchGarage, userId }){
             });
     }, [selectedGeneration, selectedModel, selectedMake])
 
+    const checkProductionYearsIsLegit = () => {
+
+        if(selectedModification){
+            const startYear = selectedModification.startYear;
+
+            return startYear >= 1885;
+        }else{
+            return true;
+        }
+    }
+
     const renderYearOptions = () => {
         if (!selectedModification) return <option value="">Choose Modification First</option>
+
+        if(!checkProductionYearsIsLegit()){
+            return <option value="">No available production years</option>
+        }
 
         const start = selectedModification.startYear
 
@@ -126,7 +141,7 @@ function GarageView({ vehicles, loading, fetchGarage, userId }){
         const newVehicle = {
             make: selectedMake,
             model: `${selectedModel} ${selectedGeneration} (${selectedModification.modification})`,
-            year: parseInt(year),
+            year: year && year !== "" ? parseInt(year): null,
             kilometers: parseInt(kilometers),
             userId
         }
@@ -195,9 +210,17 @@ function GarageView({ vehicles, loading, fetchGarage, userId }){
                         ))}
                     </select>
 
-                    <select value={year} onChange={e => setYear(e.target.value)} disabled={!selectedModification} required style={{ padding: '8px' }}>
-                        {renderYearOptions()}
-                    </select>
+                    {
+                        checkProductionYearsIsLegit() ? (
+                            <select value={year} onChange={e => setYear(e.target.value)} disabled={!selectedModification} required style={{ padding: '8px' }}>
+                                {renderYearOptions()}
+                            </select>
+                        ) : (
+                            <select value="" style={{ padding: '8px' }}>
+                                {renderYearOptions()}
+                            </select>
+                        )
+                    }
 
                     <input
                         type="number"
