@@ -101,10 +101,8 @@ function GarageView({ vehicles, loading, fetchGarage, userId }){
     }, [selectedGeneration, selectedModel, selectedMake])
 
     const checkProductionYearsIsLegit = () => {
-
         if(selectedModification){
             const startYear = selectedModification.startYear;
-
             return startYear >= 1885;
         }else{
             return true;
@@ -119,7 +117,6 @@ function GarageView({ vehicles, loading, fetchGarage, userId }){
         }
 
         const start = selectedModification.startYear
-
         const end = selectedModification.endYear ? selectedModification.endYear : 2026
 
         const yearOptions = []
@@ -161,6 +158,21 @@ function GarageView({ vehicles, loading, fetchGarage, userId }){
                 fetchGarage()
             })
             .catch(error => console.error('Error adding vehicle:', error))
+    }
+
+    const handleDeleteVehicle = (vehicleId, e) => {
+        e.stopPropagation()
+
+        fetch(`http://localhost:8080/api/vehicles/${vehicleId}`, {
+            method: 'DELETE'
+        })
+            .then(response => {
+                if(!response.ok) throw new Error('Failed to delete vehicle record')
+            })
+            .then(() => {
+                fetchGarage()
+            })
+            .catch(error => console.error('Error deleting vehicle entry:', error))
     }
 
     return (
@@ -250,9 +262,33 @@ function GarageView({ vehicles, loading, fetchGarage, userId }){
                             <li
                                 key={vehicle.id}
                                 onClick={() => navigate(`/vehicle/${vehicle.id}`)}
-                                style={{ borderBottom: '1px solid #ccc', padding: '15px 10px', cursor: 'pointer', backgroundColor: '#fff' }}
+                                style={{
+                                    borderBottom: '1px solid #ccc',
+                                    padding: '15px 10px',
+                                    cursor: 'pointer',
+                                    backgroundColor: '#fff',
+                                    display: 'flex',
+                                    justifyContent: 'between',
+                                    alignItems: 'center'
+                                }}
                             >
-                                <strong>{vehicle.year} {vehicle.make} {vehicle.model}</strong> - {vehicle.kilometers.toLocaleString()} kilometers
+                                <span style={{ flexGrow: 1 }}>
+                                    <strong>{vehicle.year} {vehicle.make} {vehicle.model}</strong> - {vehicle.kilometers.toLocaleString()} kilometers
+                                </span>
+                                <button
+                                    onClick={(e) => handleDeleteVehicle(vehicle.id, e)}
+                                    style={{
+                                        backgroundColor: '#dc3545',
+                                        color: 'white',
+                                        border: 'none',
+                                        padding: '5px 10px',
+                                        cursor: 'pointer',
+                                        borderRadius: '4px',
+                                        marginLeft: '15px'
+                                    }}
+                                >
+                                    Delete
+                                </button>
                             </li>
                         ))}
                     </ul>
