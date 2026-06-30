@@ -23,6 +23,8 @@ function VehicleDashboardView( {vehicles} ) {
     const [modalKilometersAtService, setModalKilometersAtService] = useState('')
     const [modalServiceDate, setModalServiceDate] = useState('')
 
+    const [files, setFiles] = useState([])
+
     const fetchServiceLogs = () => {
         if (!vehicle) return
 
@@ -41,8 +43,16 @@ function VehicleDashboardView( {vehicles} ) {
             })
     }
 
+    const fetchFiles = () => {
+        fetch(`http://localhost:8080/api/vehicles/${id}/files`)
+            .then(res => res.json())
+            .then(data => setFiles(data))
+            .catch(err => console.error("Error fetching files:", err));
+    };
+
     useEffect(() => {
         fetchServiceLogs()
+        fetchFiles()
     }, [id, vehicle])
 
     const handleAddServiceLog = (e) => {
@@ -151,6 +161,24 @@ function VehicleDashboardView( {vehicles} ) {
                 </form>
             </div>
 
+            <div style={{ backgroundColor: '#f8f9fa', padding: '15px', borderRadius: '5px', marginBottom: '20px', border: '1px solid #ddd' }}>
+                <h3>Upload Vehicle Documents</h3>
+                <input
+                    type="file"
+                    onChange={(e) => {
+                        const formData = new FormData();
+                        formData.append("file", e.target.files[0]);
+
+                        fetch(`http://localhost:8080/api/vehicles/${id}/files`, {
+                            method: 'POST',
+                            body: formData
+                        })
+                            .then(res => res.ok ? fetchFiles() : alert("Upload failed"))
+                            .catch(err => console.error(err));
+                    }}
+                />
+            </div>
+
             <div>
                 <h3>Maintenance History Log Table</h3>
                 {serviceLogs.length === 0 ? (
@@ -194,6 +222,26 @@ function VehicleDashboardView( {vehicles} ) {
                         ))}
                         </tbody>
                     </table>
+
+                )}
+            </div>
+
+            <div>
+                <h3>Vehicle Documents</h3>
+                {files.length === 0 ? <p>No files uploaded yet.</p> : (
+                    <ul>
+                        {files.map(file => (
+                            <li key={file.id} style={{ marginBottom: '5px' }}>
+                                <a
+                                    href={`http://localhost:8080/api/vehicles/${id}/files/${file.id}/download`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    {file.fileName}
+                                </a> ({file.fileType})
+                            </li>
+                        ))}
+                    </ul>
                 )}
             </div>
 
