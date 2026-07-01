@@ -50,6 +50,24 @@ function VehicleDashboardView( {vehicles} ) {
             .catch(err => console.error("Error fetching files:", err));
     };
 
+    const handleDeleteFile = (fileId) => {
+        const userId = 'alexander';
+
+        fetch(`http://localhost:8080/api/vehicles/${id}/files/${fileId}?userId=${userId}`, {
+            method: 'DELETE'
+        })
+            .then(response => {
+                if (response.status === 204) {
+                    fetchFiles();
+                } else if (response.status === 403) {
+                    alert("Access Denied: You do not have permission to delete this file.");
+                } else {
+                    throw new Error(`Failed to delete file. Status: ${response.status}`);
+                }
+            })
+            .catch(error => console.error('Error deleting document:', error));
+    };
+
     useEffect(() => {
         fetchServiceLogs()
         fetchFiles()
@@ -228,17 +246,42 @@ function VehicleDashboardView( {vehicles} ) {
 
             <div>
                 <h3>Vehicle Documents</h3>
-                {files.length === 0 ? <p>No files uploaded yet.</p> : (
-                    <ul>
+                {files.length === 0 ? <p style={{ color: '#666', fontStyle: 'italic' }}>No files uploaded yet.</p> : (
+                    <ul style={{ listStyleType: 'none', paddingLeft: 0 }}>
                         {files.map(file => (
-                            <li key={file.id} style={{ marginBottom: '5px' }}>
+                            <li key={file.id} style={{
+                                marginBottom: '10px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                borderBottom: '1px solid #ddd',
+                                paddingBottom: '10px'
+                            }}>
                                 <a
                                     href={`http://localhost:8080/api/vehicles/${id}/files/${file.id}/download`}
                                     target="_blank"
                                     rel="noopener noreferrer"
+                                    style={{ textDecoration: 'none', color: '#0056b3', fontWeight: 'bold' }}
                                 >
                                     {file.fileName}
-                                </a> ({file.fileType})
+                                </a>
+                                <span style={{ color: '#666', fontSize: '0.85em', marginLeft: '10px' }}>
+                        ({file.fileType})
+                    </span>
+
+                                <button
+                                    onClick={() => handleDeleteFile(file.id)}
+                                    style={{
+                                        backgroundColor: '#dc3545',
+                                        color: 'white',
+                                        border: 'none',
+                                        padding: '5px 10px',
+                                        cursor: 'pointer',
+                                        borderRadius: '4px',
+                                        marginLeft: 'auto'
+                                    }}
+                                >
+                                    Delete
+                                </button>
                             </li>
                         ))}
                     </ul>
