@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import GarageView from './views/GarageView'
 import VehicleDashboardView from './views/VehicleDashboardView'
+
+import RegisterForm from './components/RegisterForm'
+
 import './App.css'
 
 function App(){
@@ -48,6 +51,11 @@ function App(){
                     <Route
                         path="/vehicle/:id"
                         element={<VehicleDashboardView vehicles={vehicles} />}
+                    />
+
+                    <Route
+                        path="/register"
+                        element={<RegisterForm />}
                     />
                 </Routes>
             </div>
