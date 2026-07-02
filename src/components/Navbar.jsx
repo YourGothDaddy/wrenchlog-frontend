@@ -25,6 +25,10 @@ const Navbar = () => {
                     Garage
                 </Link>
 
+                <Link to="/login" style={linkStyle}>
+                    Login
+                </Link>
+
                 <Link to="/register" style={{
                     ...linkStyle,
                     backgroundColor: '#0056b3',

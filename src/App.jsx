@@ -4,6 +4,8 @@ import GarageView from './views/GarageView'
 import VehicleDashboardView from './views/VehicleDashboardView'
 
 import RegisterForm from './components/RegisterForm'
+import LoginForm from './components/LoginForm'
+
 import Navbar from './components/Navbar'
 
 import './App.css'
@@ -53,6 +55,11 @@ function App(){
                     <Route
                         path="/vehicle/:id"
                         element={<VehicleDashboardView vehicles={vehicles} />}
+                    />
+
+                    <Route
+                        path="/login"
+                        element={<LoginForm />}
                     />
 
                     <Route
