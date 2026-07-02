@@ -42,7 +42,7 @@ const RegisterForm = () => {
             })
             .catch(error => {
                 console.error('Registration network error:', error);
-                setErrorMessage('Unable to connect to the server. Check if your backend is running.');
+                setErrorMessage('Unable to connect to the server.');
             });
     };
 
