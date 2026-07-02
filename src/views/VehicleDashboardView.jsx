@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import {useEffect, useState} from "react";
 
-function VehicleDashboardView( {vehicles} ) {
+function VehicleDashboardView( {vehicles, userId} ) {
     const { id } = useParams()
     const navigate = useNavigate()
 
@@ -51,7 +51,6 @@ function VehicleDashboardView( {vehicles} ) {
     };
 
     const handleDeleteFile = (fileId) => {
-        const userId = 'alexander';
 
         fetch(`http://localhost:8080/api/vehicles/${id}/files/${fileId}?userId=${userId}`, {
             method: 'DELETE'

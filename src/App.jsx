@@ -78,7 +78,7 @@ function App(){
 
                     <Route
                         path="/vehicle/:id"
-                        element={currentUser ? <VehicleDashboardView vehicles={vehicles} /> : <Navigate to="/login" replace />}
+                        element={currentUser ? <VehicleDashboardView vehicles={vehicles} userId={currentUser.username} /> : <Navigate to="/login" replace />}
                     />
 
                     <Route
