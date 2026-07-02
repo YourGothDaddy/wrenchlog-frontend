@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 
-const LoginForm = () => {
+const LoginForm = ({onLoginSuccess}) => {
     const [formData, setFormData] = useState({
         username: '',
         password: ''
     });
     const [errorMessage, setErrorMessage] = useState('');
-    const [successMessage, setSuccessMessage] = useState('');
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -19,7 +18,6 @@ const LoginForm = () => {
     const handleSubmit = (e) => {
         e.preventDefault();
         setErrorMessage('');
-        setSuccessMessage('');
 
         fetch('http://localhost:8080/api/auth/login', {
             method: 'POST',
@@ -30,7 +28,11 @@ const LoginForm = () => {
         })
             .then(async (response) => {
                 if (response.status === 200) {
-                    setSuccessMessage('Login successful! Welcome back.');
+                    const userData = await response.json();
+
+                    localStorage.setItem('wrenchlog_user', JSON.stringify(userData));
+
+                    onLoginSuccess(userData);
                 } else if (response.status === 401) {
                     const textError = await response.text();
                     setErrorMessage(textError);
@@ -68,20 +70,6 @@ const LoginForm = () => {
                     border: '1px solid #f5c6cb'
                 }}>
                     {errorMessage}
-                </div>
-            )}
-
-            {successMessage && (
-                <div style={{
-                    backgroundColor: '#d4edda',
-                    color: '#155724',
-                    padding: '10px',
-                    borderRadius: '4px',
-                    marginBottom: '15px',
-                    fontSize: '0.9em',
-                    border: '1px solid #c3e6cb'
-                }}>
-                    {successMessage}
                 </div>
             )}
 

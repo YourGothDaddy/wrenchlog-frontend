@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-const Navbar = () => {
+const Navbar = ({ currentUser, onLogout }) => {
     return (
         <nav style={{
             display: 'flex',
@@ -20,25 +20,42 @@ const Navbar = () => {
                 </Link>
             </div>
 
-            <div style={{ display: 'flex', gap: '20px' }}>
-                <Link to="/" style={linkStyle}>
-                    Garage
-                </Link>
-
-                <Link to="/login" style={linkStyle}>
-                    Login
-                </Link>
-
-                <Link to="/register" style={{
-                    ...linkStyle,
-                    backgroundColor: '#0056b3',
-                    color: 'white',
-                    padding: '6px 12px',
-                    borderRadius: '4px',
-                }}>
-                    Register
-                </Link>
-
+            <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+                {currentUser ? (
+                    <>
+                        <Link to="/" style={linkStyle}>Garage</Link>
+                        <span style={{ fontSize: '0.9rem', color: '#666', fontStyle: 'italic' }}>
+                            Hello, {currentUser.username}
+                        </span>
+                        <button
+                            onClick={onLogout}
+                            style={{
+                                ...linkStyle,
+                                backgroundColor: '#dc3545',
+                                color: 'white',
+                                padding: '6px 12px',
+                                borderRadius: '4px',
+                                border: 'none',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            Logout
+                        </button>
+                    </>
+                ) : (
+                    <>
+                        <Link to="/login" style={linkStyle}>Login</Link>
+                        <Link to="/register" style={{
+                            ...linkStyle,
+                            backgroundColor: '#0056b3',
+                            color: 'white',
+                            padding: '6px 12px',
+                            borderRadius: '4px',
+                        }}>
+                            Register
+                        </Link>
+                    </>
+                )}
             </div>
         </nav>
     );
