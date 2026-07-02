@@ -4,6 +4,7 @@ import GarageView from './views/GarageView'
 import VehicleDashboardView from './views/VehicleDashboardView'
 
 import RegisterForm from './components/RegisterForm'
+import Navbar from './components/Navbar'
 
 import './App.css'
 
@@ -41,7 +42,8 @@ function App(){
 
     return (
         <Router>
-            <div style={{ padding: '20px', fontFamily: 'sans-serif', maxWidth: '600px', margin: '0 auto' }}>
+            <Navbar />
+            <div style={{ padding: '0 20px 20px 20px', fontFamily: 'sans-serif', maxWidth: '800px', margin: '0 auto' }}>
                 <Routes>
                     <Route
                         path="/"
