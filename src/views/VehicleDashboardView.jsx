@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
-import {useEffect, useState} from "react";
+import { useEffect, useState } from "react";
 
-function VehicleDashboardView( {vehicles, userId} ) {
+function VehicleDashboardView({ vehicles, userId }) {
     const { id } = useParams()
     const navigate = useNavigate()
 
@@ -44,58 +44,37 @@ function VehicleDashboardView( {vehicles, userId} ) {
 
     const fetchServiceLogs = () => {
         if (!vehicle) return
-
         fetch(`http://localhost:8080/api/services?vehicleId=${id}`)
-            .then(response => {
-                if (!response.ok) throw new Error('Failed to load logs')
-                return response.json()
-            })
-            .then(logs => {
-                setServiceLogs(logs)
-                setLoading(false)
-            })
-            .catch(error => {
-                console.error('Error fetching service details:', error)
-                setLoading(false)
-            })
+            .then(res => res.ok ? res.json() : Promise.reject())
+            .then(logs => { setServiceLogs(logs); setLoading(false); })
+            .catch(() => setLoading(false))
     }
 
     const fetchFiles = () => {
         fetch(`http://localhost:8080/api/vehicles/${id}/files`)
             .then(res => res.json())
             .then(data => setFiles(data))
-            .catch(err => console.error("Error fetching files:", err));
+            .catch(err => console.error(err));
     };
 
     const fetchNotes = () => {
         fetch(`http://localhost:8080/api/vehicles/${id}/notes`)
             .then(res => res.json())
             .then(data => setNotes(data))
-            .catch(err => console.error("Error loading diagnostic notes:", err));
+            .catch(err => console.error(err));
     };
 
     const fetchReminders = () => {
         fetch(`http://localhost:8080/api/reminders?vehicleId=${id}`)
             .then(res => res.json())
             .then(data => setReminders(data))
-            .catch(err => console.error("Error loading reminders:", err));
+            .catch(err => console.error(err));
     };
 
     const handleDeleteFile = (fileId) => {
-
-        fetch(`http://localhost:8080/api/vehicles/${id}/files/${fileId}?userId=${userId}`, {
-            method: 'DELETE'
-        })
-            .then(response => {
-                if (response.status === 204) {
-                    fetchFiles();
-                } else if (response.status === 403) {
-                    alert("Access Denied: You do not have permission to delete this file.");
-                } else {
-                    throw new Error(`Failed to delete file. Status: ${response.status}`);
-                }
-            })
-            .catch(error => console.error('Error deleting document:', error));
+        fetch(`http://localhost:8080/api/vehicles/${id}/files/${fileId}?userId=${userId}`, { method: 'DELETE' })
+            .then(res => res.status === 204 ? fetchFiles() : alert("Access Denied"))
+            .catch(err => console.error(err));
     };
 
     useEffect(() => {
@@ -107,120 +86,70 @@ function VehicleDashboardView( {vehicles, userId} ) {
 
     const handleAddServiceLog = (e) => {
         e.preventDefault()
-
-        const newLog = {
-            description,
-            cost: parseFloat(cost),
-            kilometersAtService: parseInt(kilometersAtService),
-            serviceDate
-        }
-
+        const newLog = { description, cost: parseFloat(cost), kilometersAtService: parseInt(kilometersAtService), serviceDate }
         fetch(`http://localhost:8080/api/services?vehicleId=${id}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(newLog)
         })
-            .then(response => {
-                if (!response.ok) throw new Error('Failed to append log record')
-                return response.json()
-            })
+            .then(res => res.json())
             .then(() => {
-                setDescription('')
-                setCost('')
-                setKilometersAtService('')
-                setServiceDate('')
+                setDescription(''); setCost(''); setKilometersAtService(''); setServiceDate('');
                 fetchServiceLogs()
             })
-            .catch(error => console.error('Error saving service entry:', error))
     }
 
     const handleDeleteServiceLog = (serviceLogId) => {
-        fetch(`http://localhost:8080/api/services/${serviceLogId}`, {
-            method: 'DELETE'
-        })
-            .then(response => {
-                if(!response.ok) throw new Error('Failed to delete log record')
-            })
-            .then(() => {
-                fetchServiceLogs()
-            })
-            .catch(error => console.error('Error deleting service entry:', error))
+        fetch(`http://localhost:8080/api/services/${serviceLogId}`, { method: 'DELETE' })
+            .then(() => fetchServiceLogs())
     }
-
 
     const handleModifyServiceLogModal = (log) => {
-        if(modifyModalIsOpen){
-            setCurrentActiveLog(null)
-            setModalDescription('')
-            setModalServiceDate('')
-            setModalKilometersAtService('')
-            setModalCost('')
-            setModifyModal(false)
-        }else{
-            setCurrentActiveLog(log)
-            setModifyModal(true)
+        if (modifyModalIsOpen) {
+            setCurrentActiveLog(null); setModalDescription(''); setModalServiceDate('');
+            setModalKilometersAtService(''); setModalCost(''); setModifyModal(false)
+        } else {
+            setCurrentActiveLog(log); setModalDescription(log.description); setModalServiceDate(log.serviceDate);
+            setModalKilometersAtService(log.kilometersAtService); setModalCost(log.cost); setModifyModal(true)
         }
     }
+
     const handleModifyServiceLog = (e) => {
         e.preventDefault()
-
         const modifiedServiceLog = {
-            description: modalDescription === '' ? currentActiveLog.description : modalDescription,
-            cost: modalCost === '' ? currentActiveLog.cost : parseFloat(modalCost),
-            kilometersAtService: modalKilometersAtService === '' ? currentActiveLog.kilometersAtService : modalKilometersAtService,
-            serviceDate: modalServiceDate === '' ? currentActiveLog.serviceDate : modalServiceDate
+            description: modalDescription,
+            cost: parseFloat(modalCost),
+            kilometersAtService: parseInt(modalKilometersAtService),
+            serviceDate: modalServiceDate
         }
-
-        fetch(`http://localhost:8080/api/services/${currentActiveLog.id}?id=${id}`,{
+        fetch(`http://localhost:8080/api/services/${currentActiveLog.id}?id=${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(modifiedServiceLog)
-        }).then(response => {
-            if (!response.ok) throw new Error('Failed to modify log record')
-            return response.json()
         }).then(() => {
-            setModifyModal(!modifyModalIsOpen)
-            fetchServiceLogs()
-        }).catch(error => console.error('Error modifying service entry:', error))
+            setModifyModal(false);
+            fetchServiceLogs();
+        })
     }
 
     const handleSaveNote = (e) => {
         e.preventDefault();
         const payload = { title: noteTitle, content: noteContent };
-
         const isEditing = editingNoteId !== null;
-        const endpoint = isEditing
-            ? `http://localhost:8080/api/vehicles/${id}/notes/${editingNoteId}`
-            : `http://localhost:8080/api/vehicles/${id}/notes`;
-
+        const endpoint = isEditing ? `http://localhost:8080/api/vehicles/${id}/notes/${editingNoteId}` : `http://localhost:8080/api/vehicles/${id}/notes`;
         fetch(endpoint, {
             method: isEditing ? 'PUT' : 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
-        })
-            .then(res => {
-                if (!res.ok) throw new Error("Could not process note action.");
-                return res.json();
-            })
-            .then(() => {
-                setNoteTitle('');
-                setNoteContent('');
-                setEditingNoteId(null);
-                fetchNotes();
-            })
-            .catch(err => console.error(err));
+        }).then(() => { setNoteTitle(''); setNoteContent(''); setEditingNoteId(null); fetchNotes(); })
     };
 
     const handleEditNoteSetup = (note) => {
-        setNoteTitle(note.title);
-        setNoteContent(note.content);
-        setEditingNoteId(note.id);
+        setNoteTitle(note.title); setNoteContent(note.content); setEditingNoteId(note.id);
     };
 
     const handleDeleteNote = (noteId) => {
-        fetch(`http://localhost:8080/api/vehicles/${id}/notes/${noteId}`, { method: 'DELETE' })
-            .then(res => res.status === 204 ? fetchNotes() : alert("Error wiping note"))
-            .catch(err => console.error(err));
+        fetch(`http://localhost:8080/api/vehicles/${id}/notes/${noteId}`, { method: 'DELETE' }).then(() => fetchNotes());
     };
 
     const handleSaveReminder = (e) => {
@@ -233,26 +162,13 @@ function VehicleDashboardView( {vehicles, userId} ) {
             intervalMonths: intervalMonths ? parseInt(intervalMonths) : null,
             lastServiceAtDate: lastServiceDate || null
         };
-
         const isEditing = editingReminderId !== null;
-        const endpoint = isEditing
-            ? `http://localhost:8080/api/reminders/${editingReminderId}?vehicleId=${id}`
-            : `http://localhost:8080/api/reminders?vehicleId=${id}`;
-
+        const endpoint = isEditing ? `http://localhost:8080/api/reminders/${editingReminderId}?vehicleId=${id}` : `http://localhost:8080/api/reminders?vehicleId=${id}`;
         fetch(endpoint, {
             method: isEditing ? 'PUT' : 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
-        })
-            .then(res => {
-                if (!res.ok) throw new Error("Could not process reminder action.");
-                return res.json();
-            })
-            .then(() => {
-                clearReminderForm();
-                fetchReminders();
-            })
-            .catch(err => console.error(err));
+        }).then(() => { clearReminderForm(); fetchReminders(); })
     };
 
     const handleResetReminder = (reminder) => {
@@ -260,97 +176,85 @@ function VehicleDashboardView( {vehicles, userId} ) {
         const payload = {
             title: reminder.title,
             description: reminder.description,
-            lastServiceAtOdometer: vehicle.kilometers, // Resets to vehicle's current odometer
+            lastServiceAtOdometer: vehicle.kilometers,
             intervalOdometer: reminder.intervalOdometer,
             intervalMonths: reminder.intervalMonths,
-            lastServiceAtDate: today // Resets to today's date
+            lastServiceAtDate: today
         };
-
         fetch(`http://localhost:8080/api/reminders/${reminder.id}?vehicleId=${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
-        })
-            .then(res => {
-                if (!res.ok) throw new Error("Failed to reset reminder interval thresholds.");
-                return res.json();
-            })
-            .then(() => fetchReminders())
-            .catch(err => console.error(err));
+        }).then(() => fetchReminders());
     };
 
     const handleEditReminderSetup = (reminder) => {
-        setReminderTitle(reminder.title);
-        setReminderDesc(reminder.description || '');
-        setLastServiceOdo(reminder.lastServiceAtOdometer || '');
-        setIntervalOdo(reminder.intervalOdometer || '');
-        setIntervalMonths(reminder.intervalMonths || '');
-        setLastServiceDate(reminder.lastServiceAtDate || '');
-        setEditingReminderId(reminder.id);
-        setShowReminderForm(true); // Open drawer to show edited values
+        setReminderTitle(reminder.title); setReminderDesc(reminder.description || '');
+        setLastServiceOdo(reminder.lastServiceAtOdometer || ''); setIntervalOdo(reminder.intervalOdometer || '');
+        setIntervalMonths(reminder.intervalMonths || ''); setLastServiceDate(reminder.lastServiceAtDate || '');
+        setEditingReminderId(reminder.id); setShowReminderForm(true);
     };
 
     const handleDeleteReminder = (reminderId) => {
-        fetch(`http://localhost:8080/api/reminders/${reminderId}`, { method: 'DELETE' })
-            .then(res => res.status === 204 ? fetchReminders() : alert("Failed to clear reminder row."))
-            .catch(err => console.error(err));
+        fetch(`http://localhost:8080/api/reminders/${reminderId}`, { method: 'DELETE' }).then(() => fetchReminders());
     };
 
     const clearReminderForm = () => {
-        setReminderTitle('');
-        setReminderDesc('');
-        setLastServiceOdo('');
-        setIntervalOdo('');
-        setIntervalMonths('');
-        setLastServiceDate('');
-        setEditingReminderId(null);
-        setShowReminderForm(false);
+        setReminderTitle(''); setReminderDesc(''); setLastServiceOdo('');
+        setIntervalOdo(''); setIntervalMonths(''); setLastServiceDate('');
+        setEditingReminderId(null); setShowReminderForm(false);
     };
 
     const checkIsDue = (reminder) => {
-        let odoDue = false;
-        let dateDue = false;
-
+        let odoDue = false; let dateDue = false;
         if (reminder.intervalOdometer && reminder.lastServiceAtOdometer !== null) {
-            const nextOdoDue = reminder.lastServiceAtOdometer + reminder.intervalOdometer;
-            if (vehicle.kilometers >= nextOdoDue) odoDue = true;
+            if (vehicle.kilometers >= (reminder.lastServiceAtOdometer + reminder.intervalOdometer)) odoDue = true;
         }
-
         if (reminder.intervalMonths && reminder.lastServiceAtDate) {
             const lastDate = new Date(reminder.lastServiceAtDate);
             lastDate.setMonth(lastDate.getMonth() + reminder.intervalMonths);
-            const today = new Date();
-            if (today >= lastDate) dateDue = true;
+            if (new Date() >= lastDate) dateDue = true;
         }
-
         return odoDue || dateDue;
     };
 
-    if (loading) return <div style={{ padding: '20px' }}>Loading workspace panel...</div>
-    if (!vehicle) return <div style={{ padding: '20px' }}><p>Vehicle not found.</p><button onClick={() => navigate('/')}>Back to Garage</button></div>
+    if (loading) return <div style={{ padding: '10px', fontFamily: 'monospace' }}>Loading workspace...</div>
+    if (!vehicle) return <div style={{ padding: '10px', fontFamily: 'monospace' }}><p>Vehicle not found.</p><button onClick={() => navigate('/')}>Back</button></div>
+
+    // Layout Styling Configurations (Standard Desktop Technical Design)
+    const baseInputStyle = { padding: '4px', border: '1px solid #777', background: '#fff', fontSize: '12px', fontFamily: 'monospace' };
+    const baseButtonStyle = { padding: '4px 8px', background: '#e1e1e1', border: '1px solid #777', cursor: 'pointer', fontSize: '12px', color: '#000', fontWeight: 'bold' };
+    const tdStyle = { padding: '5px', border: '1px solid #aaa', fontSize: '12px', textAlign: 'left' };
+    const thStyle = { padding: '5px', border: '1px solid #aaa', fontSize: '12px', textAlign: 'left', background: '#eaeaea', color: '#000' };
 
     return (
-        <div>
-            <button onClick={() => navigate('/')} style={{ padding: '5px 10px', marginBottom: '20px', cursor: 'pointer' }}>
-                Back to My Garage
-            </button>
+        <div style={{ padding: '10px', fontFamily: 'monospace', color: '#000', backgroundColor: '#fff' }}>
 
-            <div style={{ border: '2px solid #222', padding: '20px', borderRadius: '8px', backgroundColor: '#fafafa', marginBottom: '20px' }}>
-                <h2>{vehicle.year} {vehicle.make} {vehicle.model}</h2>
-                <p><strong>Current Odometer Profile:</strong> {vehicle.kilometers.toLocaleString()} km</p>
+            {/* Top Navigation */}
+            <div style={{ marginBottom: '10px' }}>
+                <button onClick={() => navigate('/')} style={baseButtonStyle}>[Return to Garage]</button>
             </div>
 
-            <div style={{ display: 'flex', borderBottom: '2px solid #ccc', marginBottom: '25px', gap: '5px' }}>
+            {/* Vehicle Spec Header Block */}
+            <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '15px', border: '2px solid #000' }}>
+                <tbody>
+                <tr>
+                    <td style={{ ...tdStyle, background: '#f0f0f0', fontWeight: 'bold', width: '15%' }}>VEHICLE:</td>
+                    <td style={{ ...tdStyle, fontWeight: 'bold' }}>{vehicle.year} {vehicle.make} {vehicle.model}</td>
+                    <td style={{ ...tdStyle, background: '#f0f0f0', fontWeight: 'bold', width: '20%' }}>CURRENT ODOMETER:</td>
+                    <td style={{ ...tdStyle, fontWeight: 'bold', width: '20%' }}>{vehicle.kilometers.toLocaleString()} km</td>
+                </tr>
+                </tbody>
+            </table>
+
+            {/* Application Tabs */}
+            <div style={{ display: 'flex', borderBottom: '2px solid #000', marginBottom: '15px' }}>
                 <button
                     onClick={() => setActiveTab('history')}
                     style={{
-                        padding: '10px 20px',
-                        cursor: 'pointer',
-                        fontWeight: 'bold',
-                        border: '1px solid #ccc',
-                        borderBottom: activeTab === 'history' ? '3px solid #0056b3' : '1px solid transparent',
-                        backgroundColor: activeTab === 'history' ? '#eef2f7' : '#fff',
-                        borderRadius: '4px 4px 0 0',
+                        padding: '6px 12px', cursor: 'pointer', fontSize: '12px', fontFamily: 'monospace', fontWeight: 'bold',
+                        border: '1px solid #000', borderBottom: activeTab === 'history' ? '2px solid #fff' : '1px solid #000',
+                        backgroundColor: activeTab === 'history' ? '#fff' : '#e1e1e1', marginBottom: '-2px', marginRight: '4px'
                     }}
                 >
                     Maintenance & Records
@@ -358,13 +262,9 @@ function VehicleDashboardView( {vehicles, userId} ) {
                 <button
                     onClick={() => setActiveTab('notes')}
                     style={{
-                        padding: '10px 20px',
-                        cursor: 'pointer',
-                        fontWeight: 'bold',
-                        border: '1px solid #ccc',
-                        borderBottom: activeTab === 'notes' ? '3px solid #0056b3' : '1px solid transparent',
-                        backgroundColor: activeTab === 'notes' ? '#eef2f7' : '#fff',
-                        borderRadius: '4px 4px 0 0',
+                        padding: '6px 12px', cursor: 'pointer', fontSize: '12px', fontFamily: 'monospace', fontWeight: 'bold',
+                        border: '1px solid #000', borderBottom: activeTab === 'notes' ? '2px solid #fff' : '1px solid #000',
+                        backgroundColor: activeTab === 'notes' ? '#fff' : '#e1e1e1', marginBottom: '-2px'
                     }}
                 >
                     Diagnostic Scratchpad Notes
@@ -373,161 +273,144 @@ function VehicleDashboardView( {vehicles, userId} ) {
 
             {activeTab === 'history' ? (
                 <div>
-                    <div style={{ backgroundColor: '#fff', border: '1px solid #ddd', padding: '15px', borderRadius: '5px', marginBottom: '20px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                            <h3 style={{ margin: 0 }}>Active Service Reminders & Maintenance Alarms</h3>
-                            <button
-                                onClick={() => { if (showReminderForm) clearReminderForm(); else setShowReminderForm(true); }}
-                                style={{ padding: '6px 12px', backgroundColor: '#333', color: '#fff', border: 'none', cursor: 'pointer', borderRadius: '4px', fontWeight: 'bold' }}
-                            >
-                                {showReminderForm ? "Close Drawer ✕" : "Configure New Alarm Rule"}
+                    {/* Section 1: Maintenance Alarms */}
+                    <div style={{ border: '1px solid #000', padding: '10px', marginBottom: '15px', backgroundColor: '#fafafa' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #000', paddingBottom: '4px', marginBottom: '10px' }}>
+                            <span style={{ fontWeight: 'bold', fontSize: '13px' }}>SYSTEM MAINTENANCE ALARMS</span>
+                            <button onClick={() => setShowReminderForm(!showReminderForm)} style={baseButtonStyle}>
+                                {showReminderForm ? "[ Hide Form ]" : "[ Configure New Rule ]"}
                             </button>
                         </div>
 
                         {showReminderForm && (
-                            <div style={{ backgroundColor: '#fdfefe', border: '1px solid #ccc', padding: '15px', borderRadius: '5px', marginBottom: '20px' }}>
-                                <h4>{editingReminderId ? "Modify Reminder Parameter Setup" : "Create New Recurrent Service Interval Rule"}</h4>
-                                <form onSubmit={handleSaveReminder} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                                    <div style={{ gridColumn: 'span 2' }}>
-                                        <input type="text" placeholder="Reminder Task Name (e.g., Engine Oil Change, Brake Pads)" value={reminderTitle} onChange={e => setReminderTitle(e.target.value)} required style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }} />
-                                    </div>
-                                    <div style={{ gridColumn: 'span 2' }}>
-                                        <input type="text" placeholder="Instructions/Part Brand Preferences (Optional)" value={reminderDesc} onChange={e => setReminderDesc(e.target.value)} style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }} />
-                                    </div>
-                                    <div>
-                                        <label style={{ fontSize: '0.85rem', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Last Completed Odometer (Omit if time-only)</label>
-                                        <input type="number" placeholder="e.g. 340000" value={lastServiceOdo} onChange={e => setLastServiceOdo(e.target.value)} style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }} />
-                                    </div>
-                                    <div>
-                                        <label style={{ fontSize: '0.85rem', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Interval Limit (Odometer Value)</label>
-                                        <input type="number" placeholder="e.g. 10000" value={intervalOdo} onChange={e => setIntervalOdo(e.target.value)} style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }} />
-                                    </div>
-                                    <div>
-                                        <label style={{ fontSize: '0.85rem', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Last Completed Date (Omit if mileage-only)</label>
-                                        <input type="date" value={lastServiceDate} onChange={e => setLastServiceDate(e.target.value)} style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }} />
-                                    </div>
-                                    <div>
-                                        <label style={{ fontSize: '0.85rem', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Interval Limit (Time Months)</label>
-                                        <input type="number" placeholder="e.g. 12" value={intervalMonths} onChange={e => setIntervalMonths(e.target.value)} style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }} />
-                                    </div>
-                                    <div style={{ gridColumn: 'span 2', display: 'flex', gap: '10px', marginTop: '5px' }}>
-                                        <button type="submit" style={{ padding: '8px 16px', backgroundColor: '#28a745', color: '#fff', border: 'none', cursor: 'pointer', borderRadius: '4px', fontWeight: 'bold' }}>
-                                            {editingReminderId ? "Apply Modifications" : "Initialize Tracking Rule"}
-                                        </button>
-                                        <button type="button" onClick={clearReminderForm} style={{ padding: '8px 16px', backgroundColor: '#6c757d', color: '#fff', border: 'none', cursor: 'pointer', borderRadius: '4px' }}>Cancel</button>
-                                    </div>
-                                </form>
-                            </div>
+                            <form onSubmit={handleSaveReminder} style={{ border: '1px dashed #000', padding: '8px', marginBottom: '10px', backgroundColor: '#fff' }}>
+                                <div style={{ fontWeight: 'bold', marginBottom: '6px', fontSize: '11px' }}>RULE CONFIGURATION METADATA</div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginBottom: '8px' }}>
+                                    <input type="text" placeholder="Task Title (Required)" value={reminderTitle} onChange={e => setReminderTitle(e.target.value)} required style={baseInputStyle} />
+                                    <input type="text" placeholder="Directives / Parts Preferences (Optional)" value={reminderDesc} onChange={e => setReminderDesc(e.target.value)} style={baseInputStyle} />
+                                    <input type="number" placeholder="Last Comp Odometer (km)" value={lastServiceOdo} onChange={e => setLastServiceOdo(e.target.value)} style={baseInputStyle} />
+                                    <input type="number" placeholder="Interval Metric Limit (km)" value={intervalOdo} onChange={e => setIntervalOdo(e.target.value)} style={baseInputStyle} />
+                                    <input type="date" value={lastServiceDate} onChange={e => setLastServiceDate(e.target.value)} style={baseInputStyle} />
+                                    <input type="number" placeholder="Interval Metric Limit (Months)" value={intervalMonths} onChange={e => setIntervalMonths(e.target.value)} style={baseInputStyle} />
+                                </div>
+                                <button type="submit" style={baseButtonStyle}>[ Save Ruleset ]</button>
+                                <button type="button" onClick={clearReminderForm} style={{ ...baseButtonStyle, marginLeft: '5px' }}>[ Cancel ]</button>
+                            </form>
                         )}
 
                         {reminders.length === 0 ? (
-                            <p style={{ color: '#666', fontStyle: 'italic', margin: 0 }}>No automated recurrent notifications or intervals defined for this vehicle.</p>
+                            <div style={{ color: '#555', fontSize: '11px' }}>No monitoring thresholds defined.</div>
                         ) : (
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                <thead>
+                                <tr>
+                                    <th style={thStyle}>Status</th>
+                                    <th style={thStyle}>Reminder Target Task</th>
+                                    <th style={thStyle}>Rules & Benchmarks</th>
+                                    <th style={thStyle}>Actions</th>
+                                </tr>
+                                </thead>
+                                <tbody>
                                 {reminders.map(rem => {
                                     const isDue = checkIsDue(rem);
                                     return (
-                                        <div
-                                            key={rem.id}
-                                            style={{
-                                                padding: '12px',
-                                                borderRadius: '6px',
-                                                borderLeft: isDue ? '6px solid #dc3545' : '6px solid #28a745',
-                                                backgroundColor: isDue ? '#fdf2f2' : '#f4fbf7',
-                                                borderTop: '1px solid #ddd', borderRight: '1px solid #ddd', borderBottom: '1px solid #ddd',
-                                                display: 'flex', flexDirection: 'column', justifyContent: 'space-between'
-                                            }}
-                                        >
-                                            <div>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                                    <h4 style={{ margin: '0 0 5px 0', color: isDue ? '#b91c1c' : '#15803d' }}>
-                                                        {isDue ? "OVERDUE: " : "OK: "} {rem.title}
-                                                    </h4>
-                                                    <div style={{ display: 'flex', gap: '6px' }}>
-                                                        <button onClick={() => handleEditReminderSetup(rem)} style={{ background: 'none', border: 'none', color: '#0056b3', cursor: 'pointer', fontSize: '0.85rem', padding: 0 }}>Edit</button>
-                                                        <span style={{ color: '#ccc' }}>|</span>
-                                                          <button onClick={() => handleDeleteReminder(rem.id)} style={{ background: 'none', border: 'none', color: '#dc3545', cursor: 'pointer', fontSize: '0.85rem', padding: 0 }}>Remove</button>
-                                                    </div>
-                                                </div>
-                                                {rem.description && <p style={{ margin: '0 0 10px 0', fontSize: '0.88rem', color: '#555', fontStyle: 'italic' }}>{rem.description}</p>}
-
-                                                <div style={{ fontSize: '0.85rem', color: '#444', lineHeight: '1.2rem' }}>
-                                                    {rem.intervalOdometer && (
-                                                        <div>Odometer Rule: Every {rem.intervalOdometer.toLocaleString()} km (Last done: {rem.lastServiceAtOdometer?.toLocaleString()} km)</div>
-                                                    )}
-                                                    {rem.intervalMonths && (
-                                                        <div>Timeframe Rule: Every {rem.intervalMonths} months (Last done: {rem.lastServiceAtDate || "N/A"})</div>
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            <button
-                                                onClick={() => handleResetReminder(rem)}
-                                                style={{
-                                                    marginTop: '12px', padding: '6px',
-                                                    backgroundColor: isDue ? '#dc3545' : '#28a745',
-                                                    color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem'
-                                                }}
-                                            >
-                                                Mark Done & Reset Cycle
-                                            </button>
-                                        </div>
+                                        <tr key={rem.id} style={{ backgroundColor: isDue ? '#ffebeb' : '#f7fff7' }}>
+                                            <td style={{ ...tdStyle, color: isDue ? '#cc0000' : '#006600', fontWeight: 'bold' }}>
+                                                {isDue ? "CRITICAL/DUE" : "OPERATIONAL"}
+                                            </td>
+                                            <td style={tdStyle}>
+                                                <span style={{ fontWeight: 'bold' }}>{rem.title}</span>
+                                                {rem.description && <div style={{ fontSize: '11px', color: '#555' }}>Note: {rem.description}</div>}
+                                            </td>
+                                            <td style={tdStyle}>
+                                                {rem.intervalOdometer && <div>Odo: Every {rem.intervalOdometer.toLocaleString()} km (Last: {rem.lastServiceAtOdometer?.toLocaleString()} km)</div>}
+                                                {rem.intervalMonths && <div>Time: Every {rem.intervalMonths} Mos (Last: {rem.lastServiceAtDate || "None"})</div>}
+                                            </td>
+                                            <td style={tdStyle}>
+                                                <button onClick={() => handleResetReminder(rem)} style={{ ...baseButtonStyle, background: isDue ? '#ffcccc' : '#ccffcc', padding: '2px 4px' }}>[ Reset Cycle ]</button>
+                                                <button onClick={() => handleEditReminderSetup(rem)} style={{ ...baseButtonStyle, marginLeft: '4px', padding: '2px 4px' }}>[ Edit ]</button>
+                                                <button onClick={() => handleDeleteReminder(rem.id)} style={{ ...baseButtonStyle, marginLeft: '4px', padding: '2px 4px', color: '#a00' }}>[ Clear ]</button>
+                                            </td>
+                                        </tr>
                                     );
                                 })}
-                            </div>
+                                </tbody>
+                            </table>
                         )}
                     </div>
 
-                    <div style={{ backgroundColor: '#eef2f7', padding: '15px', borderRadius: '5px', marginBottom: '20px' }}>
-                        <h3>Log a New Service / Repair Event</h3>
-                        <form onSubmit={handleAddServiceLog} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            <input type="text" placeholder="Description (e.g. Oil change & filter)" value={description} onChange={e => setDescription(e.target.value)} required />
-                            <input type="number" step="0.01" placeholder="Cost (€)" value={cost} onChange={e => setCost(e.target.value)} required />
-                            <input type="number" placeholder="Odometer value at service (km)" value={kilometersAtService} onChange={setKilometersAtService ? e => setKilometersAtService(e.target.value) : undefined} required />
-                            <input type="date" value={serviceDate} onChange={e => setServiceDate(e.target.value)} required />
-                            <button type="submit" style={{ padding: '10px', backgroundColor: '#0056b3', color: '#fff', border: 'none', cursor: 'pointer', borderRadius: '4px' }}>
-                                Save Repair Log Entry
-                            </button>
-                        </form>
+                    {/* Section 2: Log Inputs and Uploads Side-by-Side */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '10px', marginBottom: '15px' }}>
+                        <div style={{ border: '1px solid #000', padding: '10px', backgroundColor: '#fafafa' }}>
+                            <div style={{ fontWeight: 'bold', borderBottom: '1px solid #000', paddingBottom: '3px', marginBottom: '8px' }}>RECORD REPAIR ENTRY</div>
+                            <form onSubmit={handleAddServiceLog} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                                <input type="text" placeholder="Description" value={description} onChange={e => setDescription(e.target.value)} required style={{ ...baseInputStyle, gridColumn: 'span 2' }} />
+                                <input type="number" step="0.01" placeholder="Cost (€)" value={cost} onChange={e => setCost(e.target.value)} required style={baseInputStyle} />
+                                <input type="number" placeholder="Odometer (km)" value={kilometersAtService} onChange={e => setKilometersAtService(e.target.value)} required style={baseInputStyle} />
+                                <input type="date" value={serviceDate} onChange={e => setServiceDate(e.target.value)} required style={baseInputStyle} />
+                                <button type="submit" style={baseButtonStyle}>[ Append Data Log ]</button>
+                            </form>
+                        </div>
+
+                        <div style={{ border: '1px solid #000', padding: '10px', backgroundColor: '#fafafa' }}>
+                            <div style={{ fontWeight: 'bold', borderBottom: '1px solid #000', paddingBottom: '3px', marginBottom: '8px' }}>ATTACH FILE</div>
+                            <input
+                                type="file"
+                                style={{ fontSize: '11px', width: '100%', marginBottom: '8px' }}
+                                onChange={(e) => {
+                                    const formData = new FormData();
+                                    formData.append("file", e.target.files[0]);
+                                    fetch(`http://localhost:8080/api/vehicles/${id}/files`, { method: 'POST', body: formData }).then(() => fetchFiles());
+                                }}
+                            />
+                            <div style={{ fontSize: '10px', color: '#666' }}>Upload system receipts or datasheets.</div>
+                        </div>
                     </div>
 
-                    <div style={{ backgroundColor: '#f8f9fa', padding: '15px', borderRadius: '5px', marginBottom: '20px', border: '1px solid #ddd' }}>
-                        <h3>Upload Vehicle Documents</h3>
-                        <input
-                            type="file"
-                            onChange={(e) => {
-                                const formData = new FormData();
-                                formData.append("file", e.target.files[0]);
-                                fetch(`http://localhost:8080/api/vehicles/${id}/files`, { method: 'POST', body: formData })
-                                    .then(res => res.ok ? fetchFiles() : alert("Upload failed"))
-                                    .catch(err => console.error(err));
-                            }}
-                        />
-                    </div>
+                    {/* Section 3: Modification Form Overlay Drawer */}
+                    {modifyModalIsOpen && currentActiveLog && (
+                        <div style={{ border: '2px solid #fd7e14', padding: '10px', marginBottom: '15px', backgroundColor: '#fffbe6' }}>
+                            <div style={{ fontWeight: 'bold', color: '#fd7e14', marginBottom: '8px' }}>MODIFY SYSTEM LOG ID: {currentActiveLog.id}</div>
+                            <form onSubmit={handleModifyServiceLog} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                                <input type="text" value={modalDescription} onChange={e => setModalDescription(e.target.value)} required style={{ ...baseInputStyle, gridColumn: 'span 2' }} />
+                                <input type="number" step="0.01" value={modalCost} onChange={e => setModalCost(e.target.value)} required style={baseInputStyle} />
+                                <input type="number" value={modalKilometersAtService} onChange={e => setModalKilometersAtService(e.target.value)} required style={baseInputStyle} />
+                                <input type="date" value={modalServiceDate} onChange={e => setModalServiceDate(e.target.value)} required style={baseInputStyle} />
+                                <div>
+                                    <button type="submit" style={{ ...baseButtonStyle, background: '#fd7e14', color: '#fff' }}>[ Apply Edits ]</button>
+                                    <button type="button" onClick={() => setModifyModal(false)} style={{ ...baseButtonStyle, marginLeft: '5px' }}>[ Close ]</button>
+                                </div>
+                            </form>
+                        </div>
+                    )}
 
-                    <div>
-                        <h3>Maintenance History Log Table</h3>
+                    {/* Section 4: Maintenance History Table Log */}
+                    <div style={{ marginBottom: '15px' }}>
+                        <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>HISTORICAL MAINTENANCE LEDGER</div>
                         {serviceLogs.length === 0 ? (
-                            <p style={{ color: '#666', fontStyle: 'italic' }}>No maintenance history logs linked to this vehicle yet.</p>
+                            <div style={{ border: '1px solid #aaa', padding: '8px', color: '#666' }}>No entries logged in data matrix.</div>
                         ) : (
-                            <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <thead>
-                                <tr style={{ backgroundColor: '#222', color: '#fff', textAlign: 'left' }}>
-                                    <th style={{ padding: '10px', border: '1px solid #ddd' }}>Date</th>
-                                    <th style={{ padding: '10px', border: '1px solid #ddd' }}>Description</th>
-                                    <th style={{ padding: '10px', border: '1px solid #ddd' }}>Odometer</th>
-                                    <th style={{ padding: '10px', border: '1px solid #ddd' }}>Cost</th>
+                                <tr>
+                                    <th style={thStyle}>Date</th>
+                                    <th style={thStyle}>Work Description</th>
+                                    <th style={thStyle}>Odometer Tracking</th>
+                                    <th style={thStyle}>Financial Net Cost</th>
+                                    <th style={thStyle}>Management System Actions</th>
                                 </tr>
                                 </thead>
                                 <tbody>
                                 {serviceLogs.map(log => (
-                                    <tr key={log.id} style={{ borderBottom: '1px solid #ddd' }}>
-                                        <td style={{ padding: '10px', border: '1px solid #ddd' }}>{log.serviceDate}</td>
-                                        <td style={{ padding: '10px', border: '1px solid #ddd' }}>{log.description}</td>
-                                        <td style={{ padding: '10px', border: '1px solid #ddd' }}>{log.kilometersAtService.toLocaleString()} km</td>
-                                        <td style={{ padding: '10px', border: '1px solid #ddd' }}>€{log.cost.toFixed(2)}</td>
-                                        <td style={{ padding: '10px', border: '1px solid #ddd' }}><button onClick={() => handleModifyServiceLogModal(log)} style={{ backgroundColor: '#fd7e14', color: 'white', border: 'none', padding: '5px 10px', cursor: 'pointer', borderRadius: '4px' }}>Modify</button></td>
-                                        <td style={{ padding: '10px', border: '1px solid #ddd' }}><button onClick={() => handleDeleteServiceLog(log.id)} style={{ backgroundColor: '#dc3545', color: 'white', border: 'none', padding: '5px 10px', cursor: 'pointer', borderRadius: '4px' }}>Delete</button></td>
+                                    <tr key={log.id}>
+                                        <td style={tdStyle}>{log.serviceDate}</td>
+                                        <td style={tdStyle}>{log.description}</td>
+                                        <td style={tdStyle}>{log.kilometersAtService.toLocaleString()} km</td>
+                                        <td style={tdStyle}>€{log.cost.toFixed(2)}</td>
+                                        <td style={tdStyle}>
+                                            <button onClick={() => handleModifyServiceLogModal(log)} style={{ ...baseButtonStyle, padding: '1px 4px' }}>[ Modify ]</button>
+                                            <button onClick={() => handleDeleteServiceLog(log.id)} style={{ ...baseButtonStyle, marginLeft: '4px', padding: '1px 4px', color: '#a00' }}>[ Delete ]</button>
+                                        </td>
                                     </tr>
                                 ))}
                                 </tbody>
@@ -535,74 +418,66 @@ function VehicleDashboardView( {vehicles, userId} ) {
                         )}
                     </div>
 
-                    <div style={{ marginTop: '25px' }}>
-                        <h3>Vehicle Documents</h3>
-                        {files.length === 0 ? <p style={{ color: '#666', fontStyle: 'italic' }}>No files uploaded yet.</p> : (
-                            <ul style={{ listStyleType: 'none', paddingLeft: 0 }}>
+                    {/* Section 5: Documents File Cabinet */}
+                    <div style={{ border: '1px solid #000', padding: '10px', backgroundColor: '#fafafa' }}>
+                        <div style={{ fontWeight: 'bold', borderBottom: '1px solid #000', paddingBottom: '3px', marginBottom: '6px' }}>DOCUMENT ARCHIVE</div>
+                        {files.length === 0 ? <div style={{ fontSize: '11px', color: '#666' }}>No external binaries stored.</div> : (
+                            <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: '#fff' }}>
+                                <tbody>
                                 {files.map(file => (
-                                    <li key={file.id} style={{ marginBottom: '10px', display: 'flex', alignItems: 'center', borderBottom: '1px solid #ddd', paddingBottom: '10px' }}>
-                                        <a href={`http://localhost:8080/api/vehicles/${id}/files/${file.id}/download`} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#0056b3', fontWeight: 'bold' }}>{file.fileName}</a>
-                                        <span style={{ color: '#666', fontSize: '0.85em', marginLeft: '10px' }}>({file.fileType})</span>
-                                        <button onClick={() => handleDeleteFile(file.id)} style={{ backgroundColor: '#dc3545', color: 'white', border: 'none', padding: '5px 10px', cursor: 'pointer', borderRadius: '4px', marginLeft: 'auto' }}>Delete</button>
-                                    </li>
+                                    <tr key={file.id}>
+                                        <td style={tdStyle}>
+                                            <a href={`http://localhost:8080/api/vehicles/${id}/files/${file.id}/download`} target="_blank" rel="noopener noreferrer" style={{ color: '#0056b3', fontWeight: 'bold', textDecoration: 'underline' }}>
+                                                {file.fileName}
+                                            </a>
+                                        </td>
+                                        <td style={{ ...tdStyle, width: '15%', color: '#666' }}>{file.fileType}</td>
+                                        <td style={{ ...tdStyle, width: '15%', textAlign: 'center' }}>
+                                            <button onClick={() => handleDeleteFile(file.id)} style={{ ...baseButtonStyle, padding: '1px 4px', color: '#a00' }}>[ Wipe ]</button>
+                                        </td>
+                                    </tr>
                                 ))}
-                            </ul>
+                                </tbody>
+                            </table>
                         )}
                     </div>
                 </div>
             ) : (
+                /* Diagnostic Scratchpad Tab View */
                 <div>
-                    <div style={{ backgroundColor: '#fcf8e3', border: '1px solid #fbeed5', padding: '15px', borderRadius: '5px', marginBottom: '20px' }}>
-                        <h3>{editingNoteId ? "Rewrite Active Diagnostic Entry" : "⚡ Initialize Troubleshooting Scratchpad"}</h3>
-                        <form onSubmit={handleSaveNote} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            <input type="text" placeholder="Problem Context Name" value={noteTitle} onChange={e => setNoteTitle(e.target.value)} required style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }} />
-                            <textarea placeholder="Map testing theories..." value={noteContent} onChange={e => setNoteContent(e.target.value)} required rows="5" style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc', fontFamily: 'monospace', resize: 'vertical' }} />
-                            <div style={{ display: 'flex', gap: '10px' }}>
-                                <button type="submit" style={{ padding: '10px 15px', backgroundColor: '#d9534f', color: '#fff', border: 'none', cursor: 'pointer', borderRadius: '4px', fontWeight: 'bold' }}>{editingNoteId ? "Apply Modifications" : "Post to Scratchpad"}</button>
-                                {editingNoteId && <button type="button" onClick={() => { setNoteTitle(''); setNoteContent(''); setEditingNoteId(null); }} style={{ padding: '10px 15px', backgroundColor: '#6c757d', color: '#fff', border: 'none', cursor: 'pointer', borderRadius: '4px' }}>Cancel Edit</button>}
+                    <div style={{ border: '1px solid #000', padding: '10px', backgroundColor: '#fafafa', marginBottom: '15px' }}>
+                        <div style={{ fontWeight: 'bold', borderBottom: '1px solid #000', paddingBottom: '3px', marginBottom: '8px' }}>
+                            {editingNoteId ? "AMEND ACTIVE DIAGNOSTIC DATA FIELD" : "INITIALIZE NEW DIAGNOSTIC SCRATCHPAD ROW"}
+                        </div>
+                        <form onSubmit={handleSaveNote} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <input type="text" placeholder="Problem Vector Context Name" value={noteTitle} onChange={e => setNoteTitle(e.target.value)} required style={baseInputStyle} />
+                            <textarea placeholder="Log dynamic telemetry tracking configurations or execution testing workflows here..." value={noteContent} onChange={e => setNoteContent(e.target.value)} required rows="4" style={{ ...baseInputStyle, resize: 'vertical' }} />
+                            <div>
+                                <button type="submit" style={baseButtonStyle}>[ Record Matrix Entry ]</button>
+                                {editingNoteId && <button type="button" onClick={() => { setNoteTitle(''); setNoteContent(''); setEditingNoteId(null); }} style={{ ...baseButtonStyle, marginLeft: '5px' }}>[ Abort ]</button>}
                             </div>
                         </form>
                     </div>
 
-                    <div>
-                        <h3>Active Troubleshooting Scratchpads</h3>
-                        {notes.length === 0 ? <p style={{ color: '#666', fontStyle: 'italic' }}>No active diagnostic issues are currently open for this vehicle.</p> : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '15px' }}>
-                                {notes.map(note => (
-                                    <div key={note.id} style={{ border: '1px solid #ddd', padding: '15px', borderRadius: '6px', backgroundColor: '#fff' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #eee', paddingBottom: '8px', marginBottom: '10px' }}>
-                                            <h4 style={{ margin: 0, color: '#a94442' }}>{note.title}</h4>
-                                            <div style={{ display: 'flex', gap: '10px' }}>
-                                                <button onClick={() => handleEditNoteSetup(note)} style={{ backgroundColor: '#f0ad4e', color: 'white', border: 'none', padding: '4px 10px', cursor: 'pointer', borderRadius: '4px', fontSize: '0.85rem' }}>Update</button>
-                                                <button onClick={() => handleDeleteNote(note.id)} style={{ backgroundColor: '#bb2124', color: 'white', border: 'none', padding: '4px 10px', cursor: 'pointer', borderRadius: '4px', fontSize: '0.85rem' }}>Resolve / Delete</button>
-                                            </div>
+                    <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>STORED RAW DIAGNOSTIC TEXT SCRATCHPAD DATA</div>
+                    {notes.length === 0 ? (
+                        <div style={{ border: '1px solid #aaa', padding: '8px', color: '#666' }}>Scratchpad environment contains no stored tracking strings.</div>
+                    ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {notes.map(note => (
+                                <div key={note.id} style={{ border: '1px solid #000', padding: '8px', backgroundColor: '#fff' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed #aaa', paddingBottom: '2px', marginBottom: '4px' }}>
+                                        <span style={{ fontWeight: 'bold' }}>PARAM: {note.title}</span>
+                                        <div>
+                                            <button onClick={() => handleEditNoteSetup(note)} style={{ ...baseButtonStyle, padding: '1px 4px' }}>[ Edit ]</button>
+                                            <button onClick={() => handleDeleteNote(note.id)} style={{ ...baseButtonStyle, marginLeft: '4px', padding: '1px 4px', color: '#a00' }}>[ Wipe ]</button>
                                         </div>
-                                        <pre style={{ margin: 0, whiteSpace: 'pre-wrap', fontFamily: 'sans-serif', color: '#333', lineHeight: '1.4rem' }}>{note.content}</pre>
-                                        <small style={{ display: 'block', color: '#999', marginTop: '10px', textAlign: 'right' }}>Log Event Stamp: {new Date(note.createdAt).toLocaleString()}</small>
                                     </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            {modifyModalIsOpen && (
-                <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-                    <div style={{ backgroundColor: '#eef2f7', padding: '25px', borderRadius: '8px', width: '100%', maxWidth: '450px', position: 'relative' }}>
-                        <button onClick={() => handleModifyServiceLogModal()} style={{ position: 'absolute', top: '15px', right: '15px', background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#555' }}>✕</button>
-                        <h3>Modify a Service / Repair Event</h3>
-                        <form onSubmit={handleModifyServiceLog} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            <input type="text" placeholder="Description" value={modalDescription === '' ? currentActiveLog.description : modalDescription} onChange={e => setModalDescription(e.target.value)} required />
-                            <input type="number" step="0.01" placeholder="Cost" value={modalCost === '' ? currentActiveLog.cost : modalCost} onChange={e => setModalCost(e.target.value)} required />
-                            <input type="number" placeholder="Odometer" value={modalKilometersAtService === '' ? currentActiveLog.kilometersAtService : modalKilometersAtService} onChange={e => setModalKilometersAtService(e.target.value)} required />
-                            <input type="date" value={modalServiceDate === '' ? currentActiveLog.serviceDate : modalServiceDate} onChange={e => setModalServiceDate(e.target.value)} required />
-                            <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                                <button type="submit" style={{ flex: 1, padding: '10px', backgroundColor: '#0056b3', color: '#fff', border: 'none', cursor: 'pointer', borderRadius: '4px' }}>Save</button>
-                                <button type="button" onClick={() => handleModifyServiceLogModal()} style={{ flex: 1, padding: '10px', backgroundColor: '#6c757d', color: '#fff', border: 'none', cursor: 'pointer', borderRadius: '4px' }}>Cancel</button>
-                            </div>
-                        </form>
-                    </div>
+                                    <pre style={{ margin: 0, whiteSpace: 'pre-wrap', fontSize: '11px', background: '#fcfcfc', padding: '4px', border: '1px solid #eee' }}>{note.content}</pre>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             )}
         </div>
