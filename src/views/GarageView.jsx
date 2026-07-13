@@ -175,123 +175,156 @@ function GarageView({ vehicles, loading, fetchGarage, userId }){
             .catch(error => console.error('Error deleting vehicle entry:', error))
     }
 
+    const baseSelectStyle = { padding: '4px', border: '1px solid #777', background: '#fff', fontSize: '12px', fontFamily: 'monospace', width: '100%', boxSizing: 'border-box' };
+    const baseInputStyle = { padding: '4px', border: '1px solid #777', background: '#fff', fontSize: '12px', fontFamily: 'monospace', width: '100%', boxSizing: 'border-box' };
+    const baseButtonStyle = { padding: '4px 8px', background: '#e1e1e1', border: '1px solid #777', cursor: 'pointer', fontSize: '12px', color: '#000', fontWeight: 'bold', fontFamily: 'monospace' };
+    const tdStyle = { padding: '6px', border: '1px solid #aaa', fontSize: '12px', textAlign: 'left', verticalAlign: 'middle' };
+    const thStyle = { padding: '6px', border: '1px solid #aaa', fontSize: '12px', textAlign: 'left', background: '#eaeaea', color: '#000', fontWeight: 'bold' };
+
     return (
-        <div>
-            <h1>wrenchLog - Virtual Garage</h1>
-            <p>Welcome back, <strong>{userId}</strong>!</p>
-            <hr />
+        <div style={{ padding: '10px', fontFamily: 'monospace', color: '#000', backgroundColor: '#fff' }}>
 
-            <div style={{ backgroundColor: '#f4f4f4', padding: '20px', borderRadius: '5px', marginBottom: '20px' }}>
-                <h3>Add a Vehicle to Your Garage</h3>
-                <form onSubmit={handleAddVehicle} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ border: '2px solid #000', padding: '8px', marginBottom: '15px', backgroundColor: '#f0f0f0' }}>
+                <div style={{ fontSize: '16px', fontWeight: 'bold' }}>WRENCHLOG - VIRTUAL GARAGE</div>
+                <div style={{ fontSize: '11px', marginTop: '2px' }}>USER ID: {userId}</div>
+            </div>
 
-                    <select value={selectedMake} onChange={e => setSelectedMake(e.target.value)} required style={{ padding: '8px' }}>
-                        <option value="">Select Make</option>
-                        {makes.map(m => <option key={m} value={m}>{m}</option>)}
-                    </select>
+            <div style={{ border: '1px solid #000', padding: '10px', backgroundColor: '#fafafa', marginBottom: '20px' }}>
+                    <div style={{ fontWeight: 'bold', borderBottom: '1px solid #000', paddingBottom: '3px', marginBottom: '10px', fontSize: '13px' }}>Add New Vehicle</div>
 
-                    <select value={selectedModel} onChange={e => setSelectedModel(e.target.value)} disabled={!selectedMake} required style={{ padding: '8px' }}>
-                        <option value="">Select Model</option>
-                        {models.map(m => <option key={m} value={m}>{m}</option>)}
-                    </select>
+                <form onSubmit={handleAddVehicle} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
 
-                    <select value={selectedGeneration}
-                            onChange={e => setSelectedGeneration(e.target.value)}
-                            disabled={!selectedModel && generations.length <= 1}
-                            required style={{ padding: '8px' }}>
-                        {generations.length <= 1 ? (
-                            <option value={selectedGeneration}>No Generation Available</option>
-                        ) : (
-                            <>
-                                <option value="">Select Generation</option>
-                                {generations.map(g => <option key={g} value={g}>{g}</option>)}
-                            </>
-                        )}
-                    </select>
+                    <div>
+                        <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>Make</div>
+                        <select value={selectedMake} onChange={e => setSelectedMake(e.target.value)} required style={baseSelectStyle}>
+                            <option value="">Select Make</option>
+                            {makes.map(m => <option key={m} value={m}>{m}</option>)}
+                        </select>
+                    </div>
 
-                    <select
-                        value={selectedModification ? JSON.stringify(selectedModification) : ''}
-                        onChange={e => setSelectedModification(e.target.value ? JSON.parse(e.target.value) : null)}
-                        disabled={!selectedGeneration}
-                        required
-                        style={{ padding: '8px' }}
-                    >
-                        <option value="">Select Modification</option>
-                        {modifications.map(m => (
-                            <option key={m.id} value={JSON.stringify(m)}>{m.modification}</option>
-                        ))}
-                    </select>
+                    <div>
+                        <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>Model</div>
+                        <select value={selectedModel} onChange={e => setSelectedModel(e.target.value)} disabled={!selectedMake} required style={baseSelectStyle}>
+                            <option value="">Select Model</option>
+                            {models.map(m => <option key={m} value={m}>{m}</option>)}
+                        </select>
+                    </div>
 
-                    {
-                        checkProductionYearsIsLegit() ? (
-                            <select value={year} onChange={e => setYear(e.target.value)} disabled={!selectedModification} required style={{ padding: '8px' }}>
-                                {renderYearOptions()}
-                            </select>
-                        ) : (
-                            <select value="" style={{ padding: '8px' }}>
-                                {renderYearOptions()}
-                            </select>
-                        )
-                    }
+                    <div>
+                        <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>Generation</div>
+                        <select value={selectedGeneration}
+                                onChange={e => setSelectedGeneration(e.target.value)}
+                                disabled={!selectedModel && generations.length <= 1}
+                                required style={baseSelectStyle}>
+                            {generations.length <= 1 ? (
+                                <option value={selectedGeneration}>No Generation Available</option>
+                            ) : (
+                                <>
+                                    <option value="">Select Generation</option>
+                                    {generations.map(g => <option key={g} value={g}>{g}</option>)}
+                                </>
+                            )}
+                        </select>
+                    </div>
 
-                    <input
-                        type="number"
-                        placeholder="Current Kilometers"
-                        value={kilometers}
-                        onChange={e => setKilometers(e.target.value)}
-                        required
-                        style={{ padding: '8px' }}
-                    />
+                    <div>
+                        <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>Engine Modification</div>
+                        <select
+                            value={selectedModification ? JSON.stringify(selectedModification) : ''}
+                            onChange={e => setSelectedModification(e.target.value ? JSON.parse(e.target.value) : null)}
+                            disabled={!selectedGeneration}
+                            required
+                            style={baseSelectStyle}
+                        >
+                            <option value="">Select Modification</option>
+                            {modifications.map(m => (
+                                <option key={m.id} value={JSON.stringify(m)}>{m.modification}</option>
+                            ))}
+                        </select>
+                    </div>
 
-                    <button type="submit" style={{ padding: '10px', backgroundColor: '#222', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
-                        Roll Vehicle into Garage
-                    </button>
+                    <div>
+                        <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>Year of Manufacture</div>
+                        {
+                            checkProductionYearsIsLegit() ? (
+                                <select value={year} onChange={e => setYear(e.target.value)} disabled={!selectedModification} required style={baseSelectStyle}>
+                                    {renderYearOptions()}
+                                </select>
+                            ) : (
+                                <select value="" style={baseSelectStyle}>
+                                    {renderYearOptions()}
+                                </select>
+                            )
+                        }
+                    </div>
+
+                    <div>
+                        <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>Current Odometer Value (km)</div>
+                        <input
+                            type="number"
+                            placeholder="Input integer string"
+                            value={kilometers}
+                            onChange={e => setKilometers(e.target.value)}
+                            required
+                            style={baseInputStyle}
+                        />
+                    </div>
+
+                    <div style={{ gridColumn: 'span 2', marginTop: '4px' }}>
+                        <button type="submit" style={{ ...baseButtonStyle, width: '100%', padding: '6px' }}>
+                            [ Commit Vehicle to Garage ]
+                        </button>
+                    </div>
                 </form>
             </div>
 
-            <div>
-                <h2>My Vehicles</h2>
-                <p style={{ fontSize: '0.9rem', color: '#666' }}>Click on a vehicle to open its dashboard</p>
+            {/* Display Section: Active Registries */}
+            <div style={{ marginBottom: '10px' }}>
+                <div style={{ fontWeight: 'bold', fontSize: '13px', marginBottom: '2px' }}>Vehicles</div>
+                <div style={{ fontSize: '11px', color: '#555', marginBottom: '8px' }}>Select row to access detailed vehicle information</div>
+
                 {loading ? (
-                    <p>Loading your garage...</p>
+                    <div style={{ border: '1px solid #aaa', padding: '8px', fontSize: '12px' }}>Querying active system registers...</div>
                 ) : vehicles.length === 0 ? (
-                    <p>Your garage is empty. Time to grab a wrench and add a car!</p>
+                    <div style={{ border: '1px dashed #777', padding: '12px', fontSize: '12px', color: '#555' }}>
+                        Datastore contains zero records. Input metadata above to register local assets.
+                    </div>
                 ) : (
-                    <ul style={{ listStyleType: 'none', paddingLeft: 0 }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #000' }}>
+                        <thead>
+                        <tr>
+                            <th style={{ ...thStyle, width: '15%' }}>Make</th>
+                            <th style style={thStyle}>Model, Specifications & Year</th>
+                            <th style={{ ...thStyle, width: '20%' }}>Odometer</th>
+                            <th style={{ ...thStyle, width: '15%', textAlign: 'center' }}>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
                         {vehicles.map(vehicle => (
-                            <li
+                            <tr
                                 key={vehicle.id}
                                 onClick={() => navigate(`/vehicle/${vehicle.id}`)}
-                                style={{
-                                    borderBottom: '1px solid #ccc',
-                                    padding: '15px 10px',
-                                    cursor: 'pointer',
-                                    backgroundColor: '#fff',
-                                    display: 'flex',
-                                    justifyContent: 'between',
-                                    alignItems: 'center'
-                                }}
+                                style={{ cursor: 'pointer', backgroundColor: '#fff' }}
+                                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f5f5f5' }}
+                                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#fff' }}
                             >
-                                <span style={{ flexGrow: 1 }}>
-                                    <strong>{vehicle.year} {vehicle.make} {vehicle.model}</strong> - {vehicle.kilometers.toLocaleString()} kilometers
-                                </span>
-                                <button
-                                    onClick={(e) => handleDeleteVehicle(vehicle.id, e)}
-                                    style={{
-                                        backgroundColor: '#dc3545',
-                                        color: 'white',
-                                        border: 'none',
-                                        padding: '5px 10px',
-                                        cursor: 'pointer',
-                                        borderRadius: '4px',
-                                        marginLeft: '15px'
-                                    }}
-                                >
-                                    Delete
-                                </button>
-                            </li>
+                                <td style={tdStyle}>{vehicle.make}</td>
+                                <td style={{ ...tdStyle, color: '#0056b3', textDecoration: 'underline', fontWeight: 'bold' }}>
+                                    {vehicle.model} {vehicle.year}
+                                </td>
+                                <td style={tdStyle}>{vehicle.kilometers.toLocaleString()} km</td>
+                                <td style={{ ...tdStyle, textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+                                    <button
+                                        onClick={(e) => handleDeleteVehicle(vehicle.id, e)}
+                                        style={{ ...baseButtonStyle, color: '#a00', padding: '2px 6px' }}
+                                    >
+                                        [ Purge ]
+                                    </button>
+                                </td>
+                            </tr>
                         ))}
-                    </ul>
+                        </tbody>
+                    </table>
                 )}
             </div>
         </div>
