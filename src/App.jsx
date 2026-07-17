@@ -29,7 +29,7 @@ function App(){
 
         setLoading(true);
 
-        fetch(`http://localhost:8080/api/vehicles?userId=${currentUser.username}`)
+        fetch(`http://localhost:8080/api/vehicles?username=${currentUser.username}`)
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Network error');

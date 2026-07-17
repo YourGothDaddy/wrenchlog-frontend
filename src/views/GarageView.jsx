@@ -140,7 +140,7 @@ function GarageView({ vehicles, loading, fetchGarage, userId }){
             model: `${selectedModel} ${selectedGeneration} (${selectedModification.modification})`,
             year: year && year !== "" ? parseInt(year): null,
             kilometers: parseInt(kilometers),
-            userId
+            username: userId
         }
 
         fetch('http://localhost:8080/api/vehicles', {
