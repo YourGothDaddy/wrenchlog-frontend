@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import api from '../utils/api'
 
 function GarageView({ vehicles, loading, fetchGarage, userId }){
     const navigate = useNavigate()
@@ -18,22 +19,14 @@ function GarageView({ vehicles, loading, fetchGarage, userId }){
     const [kilometers, setKilometers] = useState('')
 
     useEffect(() => {
-        fetch('http://localhost:8080/api/catalog/makes')
-            .then(res => {
-                if(!res.ok) throw new Error(`HTTP error fetching makes: ${res.status}`);
-                return res.json()
-            })
+        api.get('/api/catalog/makes')
             .then(data => setMakes(data))
-            .catch(err => console.error('Error fetching makes:', err))
+            .catch(err => console.error(err))
     }, [])
 
     useEffect(() => {
         if (!selectedMake) { setModels([]); return; }
-        fetch(`http://localhost:8080/api/catalog/models?make=${encodeURIComponent(selectedMake)}`)
-            .then(res => {
-                if(!res.ok) throw new Error(`HTTP error fetching models: ${res.status}`);
-                return res.json();
-            })
+        api.get(`/api/catalog/models?make=${encodeURIComponent(selectedMake)}`)
             .then(data => {
                 setModels(data)
                 setGenerations([])
@@ -43,15 +36,12 @@ function GarageView({ vehicles, loading, fetchGarage, userId }){
                 setSelectedModification(null)
                 setYear('')
             })
+            .catch(err => console.error(err))
     }, [selectedMake])
 
     useEffect(() => {
         if (!selectedModel) { setGenerations([]); return; }
-        fetch(`http://localhost:8080/api/catalog/generations?make=${encodeURIComponent(selectedMake)}&model=${encodeURIComponent(selectedModel)}`)
-            .then(res => {
-                if(!res.ok) throw new Error(`HTTP error fetching models: ${res.status}`);
-                return res.json();
-            })
+        api.get(`/api/catalog/generations?make=${encodeURIComponent(selectedMake)}&model=${encodeURIComponent(selectedModel)}`)
             .then(data => {
                 if(Array.isArray(data)){
                     const realGenerations = data.filter(gen => gen && gen.trim() !== "" && gen.toUpperCase() !== "N/A");
@@ -71,7 +61,7 @@ function GarageView({ vehicles, loading, fetchGarage, userId }){
                 setYear('')
             })
             .catch(err => {
-                console.error('Error fetching generations:', err);
+                console.error(err);
                 setGenerations([]);
                 setSelectedGeneration('');
             })
@@ -80,11 +70,7 @@ function GarageView({ vehicles, loading, fetchGarage, userId }){
     useEffect(() => {
         if (!selectedGeneration) { setModifications([]); return; }
 
-        fetch(`http://localhost:8080/api/catalog/modifications?make=${encodeURIComponent(selectedMake)}&model=${encodeURIComponent(selectedModel)}&generation=${encodeURIComponent(selectedGeneration)}`)
-            .then(res => {
-                if (!res.ok) throw new Error("Server returned an error");
-                return res.json();
-            })
+        api.get(`/api/catalog/modifications?make=${encodeURIComponent(selectedMake)}&model=${encodeURIComponent(selectedModel)}&generation=${encodeURIComponent(selectedGeneration)}`)
             .then(data => {
                 if (Array.isArray(data)) {
                     setModifications(data);
@@ -95,7 +81,7 @@ function GarageView({ vehicles, loading, fetchGarage, userId }){
                 setYear('');
             })
             .catch(err => {
-                console.error('Error fetching modifications:', err);
+                console.error(err);
                 setModifications([]);
             });
     }, [selectedGeneration, selectedModel, selectedMake])
@@ -143,36 +129,23 @@ function GarageView({ vehicles, loading, fetchGarage, userId }){
             username: userId
         }
 
-        fetch('http://localhost:8080/api/vehicles', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(newVehicle)
-        })
-            .then(response => {
-                if(!response.ok) throw new Error('Failed to add vehicle')
-                return response.json()
-            })
+        api.post('/api/vehicles', newVehicle)
             .then(() => {
                 setSelectedMake('')
                 setKilometers('')
                 fetchGarage()
             })
-            .catch(error => console.error('Error adding vehicle:', error))
+            .catch(error => console.error(error))
     }
 
     const handleDeleteVehicle = (vehicleId, e) => {
         e.stopPropagation()
 
-        fetch(`http://localhost:8080/api/vehicles/${vehicleId}`, {
-            method: 'DELETE'
-        })
-            .then(response => {
-                if(!response.ok) throw new Error('Failed to delete vehicle record')
-            })
+        api.delete(`/api/vehicles/${vehicleId}`)
             .then(() => {
                 fetchGarage()
             })
-            .catch(error => console.error('Error deleting vehicle entry:', error))
+            .catch(error => console.error(error))
     }
 
     const baseSelectStyle = { padding: '4px', border: '1px solid #777', background: '#fff', fontSize: '12px', fontFamily: 'monospace', width: '100%', boxSizing: 'border-box' };
@@ -190,7 +163,7 @@ function GarageView({ vehicles, loading, fetchGarage, userId }){
             </div>
 
             <div style={{ border: '1px solid #000', padding: '10px', backgroundColor: '#fafafa', marginBottom: '20px' }}>
-                    <div style={{ fontWeight: 'bold', borderBottom: '1px solid #000', paddingBottom: '3px', marginBottom: '10px', fontSize: '13px' }}>Add New Vehicle</div>
+                <div style={{ fontWeight: 'bold', borderBottom: '1px solid #000', paddingBottom: '3px', marginBottom: '10px', fontSize: '13px' }}>Add New Vehicle</div>
 
                 <form onSubmit={handleAddVehicle} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
 
@@ -278,7 +251,6 @@ function GarageView({ vehicles, loading, fetchGarage, userId }){
                 </form>
             </div>
 
-            {/* Display Section: Active Registries */}
             <div style={{ marginBottom: '10px' }}>
                 <div style={{ fontWeight: 'bold', fontSize: '13px', marginBottom: '2px' }}>Vehicles</div>
                 <div style={{ fontSize: '11px', color: '#555', marginBottom: '8px' }}>Select row to access detailed vehicle information</div>
@@ -294,7 +266,7 @@ function GarageView({ vehicles, loading, fetchGarage, userId }){
                         <thead>
                         <tr>
                             <th style={{ ...thStyle, width: '15%' }}>Make</th>
-                            <th style style={thStyle}>Model, Specifications & Year</th>
+                            <th style={thStyle}>Model, Specifications & Year</th>
                             <th style={{ ...thStyle, width: '20%' }}>Odometer</th>
                             <th style={{ ...thStyle, width: '15%', textAlign: 'center' }}>Actions</th>
                         </tr>

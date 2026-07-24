@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom'
-import { useEffect, useState } from "react";
+import { useEffect, useState } from "react"
+import api from '../utils/api'
 
 function VehicleDashboardView({ vehicles, userId }) {
     const { id } = useParams()
@@ -7,7 +8,7 @@ function VehicleDashboardView({ vehicles, userId }) {
 
     const vehicle = vehicles.find(v => v.id === parseInt(id))
 
-    const [activeTab, setActiveTab] = useState('history');
+    const [activeTab, setActiveTab] = useState('history')
 
     const [serviceLogs, setServiceLogs] = useState([])
     const [loading, setLoading] = useState(true)
@@ -44,38 +45,34 @@ function VehicleDashboardView({ vehicles, userId }) {
 
     const fetchServiceLogs = () => {
         if (!vehicle) return
-        fetch(`http://localhost:8080/api/services?vehicleId=${id}`)
-            .then(res => res.ok ? res.json() : Promise.reject())
+        api.get(`/api/services?vehicleId=${id}`)
             .then(logs => { setServiceLogs(logs); setLoading(false); })
             .catch(() => setLoading(false))
     }
 
     const fetchFiles = () => {
-        fetch(`http://localhost:8080/api/vehicles/${id}/files`)
-            .then(res => res.json())
+        api.get(`/api/vehicles/${id}/files`)
             .then(data => setFiles(data))
-            .catch(err => console.error(err));
-    };
+            .catch(err => console.error(err))
+    }
 
     const fetchNotes = () => {
-        fetch(`http://localhost:8080/api/vehicles/${id}/notes`)
-            .then(res => res.json())
+        api.get(`/api/vehicles/${id}/notes`)
             .then(data => setNotes(data))
-            .catch(err => console.error(err));
-    };
+            .catch(err => console.error(err))
+    }
 
     const fetchReminders = () => {
-        fetch(`http://localhost:8080/api/reminders?vehicleId=${id}`)
-            .then(res => res.json())
+        api.get(`/api/reminders?vehicleId=${id}`)
             .then(data => setReminders(data))
-            .catch(err => console.error(err));
-    };
+            .catch(err => console.error(err))
+    }
 
     const handleDeleteFile = (fileId) => {
-        fetch(`http://localhost:8080/api/vehicles/${id}/files/${fileId}?userId=${userId}`, { method: 'DELETE' })
-            .then(res => res.status === 204 ? fetchFiles() : alert("Access Denied"))
-            .catch(err => console.error(err));
-    };
+        api.delete(`/api/vehicles/${id}/files/${fileId}?userId=${userId}`)
+            .then(() => fetchFiles())
+            .catch(err => console.error(err))
+    }
 
     useEffect(() => {
         fetchServiceLogs()
@@ -87,21 +84,18 @@ function VehicleDashboardView({ vehicles, userId }) {
     const handleAddServiceLog = (e) => {
         e.preventDefault()
         const newLog = { description, cost: parseFloat(cost), kilometersAtService: parseInt(kilometersAtService), serviceDate }
-        fetch(`http://localhost:8080/api/services?vehicleId=${id}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(newLog)
-        })
-            .then(res => res.json())
+        api.post(`/api/services?vehicleId=${id}`, newLog)
             .then(() => {
                 setDescription(''); setCost(''); setKilometersAtService(''); setServiceDate('');
                 fetchServiceLogs()
             })
+            .catch(err => console.error(err))
     }
 
     const handleDeleteServiceLog = (serviceLogId) => {
-        fetch(`http://localhost:8080/api/services/${serviceLogId}`, { method: 'DELETE' })
+        api.delete(`/api/services/${serviceLogId}`)
             .then(() => fetchServiceLogs())
+            .catch(err => console.error(err))
     }
 
     const handleModifyServiceLogModal = (log) => {
@@ -122,38 +116,37 @@ function VehicleDashboardView({ vehicles, userId }) {
             kilometersAtService: parseInt(modalKilometersAtService),
             serviceDate: modalServiceDate
         }
-        fetch(`http://localhost:8080/api/services/${currentActiveLog.id}?id=${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(modifiedServiceLog)
-        }).then(() => {
-            setModifyModal(false);
-            fetchServiceLogs();
-        })
+        api.put(`/api/services/${currentActiveLog.id}?id=${id}`, modifiedServiceLog)
+            .then(() => {
+                setModifyModal(false)
+                fetchServiceLogs()
+            })
+            .catch(err => console.error(err))
     }
 
     const handleSaveNote = (e) => {
-        e.preventDefault();
-        const payload = { title: noteTitle, content: noteContent };
-        const isEditing = editingNoteId !== null;
-        const endpoint = isEditing ? `http://localhost:8080/api/vehicles/${id}/notes/${editingNoteId}` : `http://localhost:8080/api/vehicles/${id}/notes`;
-        fetch(endpoint, {
-            method: isEditing ? 'PUT' : 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        }).then(() => { setNoteTitle(''); setNoteContent(''); setEditingNoteId(null); fetchNotes(); })
-    };
+        e.preventDefault()
+        const payload = { title: noteTitle, content: noteContent }
+        const isEditing = editingNoteId !== null
+        const endpoint = isEditing ? `/api/vehicles/${id}/notes/${editingNoteId}` : `/api/vehicles/${id}/notes`
+
+        const request = isEditing ? api.put(endpoint, payload) : api.post(endpoint, payload)
+        request.then(() => { setNoteTitle(''); setNoteContent(''); setEditingNoteId(null); fetchNotes(); })
+            .catch(err => console.error(err))
+    }
 
     const handleEditNoteSetup = (note) => {
         setNoteTitle(note.title); setNoteContent(note.content); setEditingNoteId(note.id);
-    };
+    }
 
     const handleDeleteNote = (noteId) => {
-        fetch(`http://localhost:8080/api/vehicles/${id}/notes/${noteId}`, { method: 'DELETE' }).then(() => fetchNotes());
-    };
+        api.delete(`/api/vehicles/${id}/notes/${noteId}`)
+            .then(() => fetchNotes())
+            .catch(err => console.error(err))
+    }
 
     const handleSaveReminder = (e) => {
-        e.preventDefault();
+        e.preventDefault()
         const payload = {
             title: reminderTitle,
             description: reminderDesc,
@@ -161,18 +154,17 @@ function VehicleDashboardView({ vehicles, userId }) {
             intervalOdometer: intervalOdo ? parseInt(intervalOdo) : null,
             intervalMonths: intervalMonths ? parseInt(intervalMonths) : null,
             lastServiceAtDate: lastServiceDate || null
-        };
-        const isEditing = editingReminderId !== null;
-        const endpoint = isEditing ? `http://localhost:8080/api/reminders/${editingReminderId}?vehicleId=${id}` : `http://localhost:8080/api/reminders?vehicleId=${id}`;
-        fetch(endpoint, {
-            method: isEditing ? 'PUT' : 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        }).then(() => { clearReminderForm(); fetchReminders(); })
-    };
+        }
+        const isEditing = editingReminderId !== null
+        const endpoint = isEditing ? `/api/reminders/${editingReminderId}?vehicleId=${id}` : `/api/reminders?vehicleId=${id}`
+
+        const request = isEditing ? api.put(endpoint, payload) : api.post(endpoint, payload)
+        request.then(() => { clearReminderForm(); fetchReminders(); })
+            .catch(err => console.error(err))
+    }
 
     const handleResetReminder = (reminder) => {
-        const today = new Date().toISOString().split('T')[0];
+        const today = new Date().toISOString().split('T')[0]
         const payload = {
             title: reminder.title,
             description: reminder.description,
@@ -180,30 +172,30 @@ function VehicleDashboardView({ vehicles, userId }) {
             intervalOdometer: reminder.intervalOdometer,
             intervalMonths: reminder.intervalMonths,
             lastServiceAtDate: today
-        };
-        fetch(`http://localhost:8080/api/reminders/${reminder.id}?vehicleId=${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        }).then(() => fetchReminders());
-    };
+        }
+        api.put(`/api/reminders/${reminder.id}?vehicleId=${id}`, payload)
+            .then(() => fetchReminders())
+            .catch(err => console.error(err))
+    }
 
     const handleEditReminderSetup = (reminder) => {
         setReminderTitle(reminder.title); setReminderDesc(reminder.description || '');
         setLastServiceOdo(reminder.lastServiceAtOdometer || ''); setIntervalOdo(reminder.intervalOdometer || '');
         setIntervalMonths(reminder.intervalMonths || ''); setLastServiceDate(reminder.lastServiceAtDate || '');
         setEditingReminderId(reminder.id); setShowReminderForm(true);
-    };
+    }
 
     const handleDeleteReminder = (reminderId) => {
-        fetch(`http://localhost:8080/api/reminders/${reminderId}`, { method: 'DELETE' }).then(() => fetchReminders());
-    };
+        api.delete(`/api/reminders/${reminderId}`)
+            .then(() => fetchReminders())
+            .catch(err => console.error(err))
+    }
 
     const clearReminderForm = () => {
         setReminderTitle(''); setReminderDesc(''); setLastServiceOdo('');
         setIntervalOdo(''); setIntervalMonths(''); setLastServiceDate('');
         setEditingReminderId(null); setShowReminderForm(false);
-    };
+    }
 
     const checkIsDue = (reminder) => {
         let odoDue = false; let dateDue = false;
@@ -216,12 +208,11 @@ function VehicleDashboardView({ vehicles, userId }) {
             if (new Date() >= lastDate) dateDue = true;
         }
         return odoDue || dateDue;
-    };
+    }
 
     if (loading) return <div style={{ padding: '10px', fontFamily: 'monospace' }}>Loading workspace...</div>
     if (!vehicle) return <div style={{ padding: '10px', fontFamily: 'monospace' }}><p>Vehicle not found.</p><button onClick={() => navigate('/')}>Back</button></div>
 
-    // Layout Styling Configurations (Standard Desktop Technical Design)
     const baseInputStyle = { padding: '4px', border: '1px solid #777', background: '#fff', fontSize: '12px', fontFamily: 'monospace' };
     const baseButtonStyle = { padding: '4px 8px', background: '#e1e1e1', border: '1px solid #777', cursor: 'pointer', fontSize: '12px', color: '#000', fontWeight: 'bold' };
     const tdStyle = { padding: '5px', border: '1px solid #aaa', fontSize: '12px', textAlign: 'left' };
@@ -230,12 +221,10 @@ function VehicleDashboardView({ vehicles, userId }) {
     return (
         <div style={{ padding: '10px', fontFamily: 'monospace', color: '#000', backgroundColor: '#fff' }}>
 
-            {/* Top Navigation */}
             <div style={{ marginBottom: '10px' }}>
                 <button onClick={() => navigate('/')} style={baseButtonStyle}>[Return to Garage]</button>
             </div>
 
-            {/* Vehicle Spec Header Block */}
             <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '15px', border: '2px solid #000' }}>
                 <tbody>
                 <tr>
@@ -247,7 +236,6 @@ function VehicleDashboardView({ vehicles, userId }) {
                 </tbody>
             </table>
 
-            {/* Application Tabs */}
             <div style={{ display: 'flex', borderBottom: '2px solid #000', marginBottom: '15px' }}>
                 <button
                     onClick={() => setActiveTab('history')}
@@ -273,7 +261,6 @@ function VehicleDashboardView({ vehicles, userId }) {
 
             {activeTab === 'history' ? (
                 <div>
-                    {/* Section 1: Maintenance Alarms */}
                     <div style={{ border: '1px solid #000', padding: '10px', marginBottom: '15px', backgroundColor: '#fafafa' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #000', paddingBottom: '4px', marginBottom: '10px' }}>
                             <span style={{ fontWeight: 'bold', fontSize: '13px' }}>SYSTEM MAINTENANCE ALARMS</span>
@@ -339,7 +326,6 @@ function VehicleDashboardView({ vehicles, userId }) {
                         )}
                     </div>
 
-                    {/* Section 2: Log Inputs and Uploads Side-by-Side */}
                     <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '10px', marginBottom: '15px' }}>
                         <div style={{ border: '1px solid #000', padding: '10px', backgroundColor: '#fafafa' }}>
                             <div style={{ fontWeight: 'bold', borderBottom: '1px solid #000', paddingBottom: '3px', marginBottom: '8px' }}>RECORD REPAIR ENTRY</div>
@@ -358,16 +344,17 @@ function VehicleDashboardView({ vehicles, userId }) {
                                 type="file"
                                 style={{ fontSize: '11px', width: '100%', marginBottom: '8px' }}
                                 onChange={(e) => {
-                                    const formData = new FormData();
-                                    formData.append("file", e.target.files[0]);
-                                    fetch(`http://localhost:8080/api/vehicles/${id}/files`, { method: 'POST', body: formData }).then(() => fetchFiles());
+                                    const formData = new FormData()
+                                    formData.append("file", e.target.files[0])
+                                    api.post(`/api/vehicles/${id}/files`, formData)
+                                        .then(() => fetchFiles())
+                                        .catch(err => console.error(err))
                                 }}
                             />
                             <div style={{ fontSize: '10px', color: '#666' }}>Upload system receipts or datasheets.</div>
                         </div>
                     </div>
 
-                    {/* Section 3: Modification Form Overlay Drawer */}
                     {modifyModalIsOpen && currentActiveLog && (
                         <div style={{ border: '2px solid #fd7e14', padding: '10px', marginBottom: '15px', backgroundColor: '#fffbe6' }}>
                             <div style={{ fontWeight: 'bold', color: '#fd7e14', marginBottom: '8px' }}>MODIFY SYSTEM LOG ID: {currentActiveLog.id}</div>
@@ -384,7 +371,6 @@ function VehicleDashboardView({ vehicles, userId }) {
                         </div>
                     )}
 
-                    {/* Section 4: Maintenance History Table Log */}
                     <div style={{ marginBottom: '15px' }}>
                         <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>HISTORICAL MAINTENANCE LEDGER</div>
                         {serviceLogs.length === 0 ? (
@@ -418,7 +404,6 @@ function VehicleDashboardView({ vehicles, userId }) {
                         )}
                     </div>
 
-                    {/* Section 5: Documents File Cabinet */}
                     <div style={{ border: '1px solid #000', padding: '10px', backgroundColor: '#fafafa' }}>
                         <div style={{ fontWeight: 'bold', borderBottom: '1px solid #000', paddingBottom: '3px', marginBottom: '6px' }}>DOCUMENT ARCHIVE</div>
                         {files.length === 0 ? <div style={{ fontSize: '11px', color: '#666' }}>No external binaries stored.</div> : (
@@ -443,7 +428,6 @@ function VehicleDashboardView({ vehicles, userId }) {
                     </div>
                 </div>
             ) : (
-                /* Diagnostic Scratchpad Tab View */
                 <div>
                     <div style={{ border: '1px solid #000', padding: '10px', backgroundColor: '#fafafa', marginBottom: '15px' }}>
                         <div style={{ fontWeight: 'bold', borderBottom: '1px solid #000', paddingBottom: '3px', marginBottom: '8px' }}>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import {BrowserRouter as Router, Routes, Route, Navigate} from 'react-router-dom'
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import GarageView from './views/GarageView'
 import VehicleDashboardView from './views/VehicleDashboardView'
 
@@ -8,60 +8,60 @@ import LoginForm from './components/LoginForm'
 
 import Navbar from './components/Navbar'
 
+import api from './utils/api';
+
 import './App.css'
 
 function App(){
+    const navigate = useNavigate();
+    const [currentUser, setCurrentUser] = useState(null);
     const [vehicles, setVehicles] = useState([])
     const [loading, setLoading] = useState(true)
 
-    const [currentUser, setCurrentUser] = useState(() => {
-        const savedUser = localStorage.getItem('wrenchlog_user');
-        return savedUser ? JSON.parse(savedUser) : null;
-    });
+    useEffect(() => {
+        const storedUser = localStorage.getItem('wrenchlog_user');
+        if (storedUser) {
+            setCurrentUser(JSON.parse(storedUser));
+        }
+        setLoading(false);
+    }, []);
 
     const [make, setMake] = useState('')
     const [model, setModel] = useState('')
     const [year, setYear] = useState('')
     const [mileage, setMileage] = useState('')
 
-    const fetchGarage = () => {
-        if (!currentUser) return;
-
-        setLoading(true);
-
-        fetch(`http://localhost:8080/api/vehicles?username=${currentUser.username}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network error');
-                }
-                return response.json();
-            })
-            .then(data => {
-                setVehicles(data);
-                setLoading(false);
-            })
-            .catch(error => {
-                console.error('Error fetching vehicles:', error);
-                setLoading(false);
-            })
-    }
+    const fetchGarage = async () => {
+        try {
+            const data = await api.get('/api/vehicles');
+            setVehicles(data);
+        } catch (error) {
+            console.error("Failed to load garage items:", error);
+        }
+    };
 
     useEffect(() => {
         if (currentUser) {
             fetchGarage();
         } else {
             setVehicles([]);
-            setLoading(false);
         }
-    }, [currentUser])
+    }, [currentUser]);
+
+    const handleLoginSuccess = (userData) => {
+        localStorage.setItem('wrenchlog_user', JSON.stringify(userData));
+        setCurrentUser(userData);
+        navigate('/');
+    };
 
     const handleLogout = () => {
         localStorage.removeItem('wrenchlog_user');
         setCurrentUser(null);
+        navigate('/login');
     };
 
     return (
-        <Router>
+        <>
             <Navbar currentUser={currentUser} onLogout={handleLogout} />
             <div style={{ padding: '0 20px 20px 20px', fontFamily: 'sans-serif', maxWidth: '800px', margin: '0 auto' }}>
                 <Routes>
@@ -83,7 +83,7 @@ function App(){
 
                     <Route
                         path="/login"
-                        element={!currentUser ? <LoginForm onLoginSuccess={setCurrentUser} /> : <Navigate to="/" replace />}
+                        element={!currentUser ? <LoginForm onLoginSuccess={handleLoginSuccess} /> : <Navigate to="/" replace />}
                     />
 
                     <Route
@@ -92,7 +92,7 @@ function App(){
                     />
                 </Routes>
             </div>
-        </Router>
+        </>
     )
 }
 

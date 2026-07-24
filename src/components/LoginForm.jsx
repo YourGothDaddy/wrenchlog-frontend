@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import api from '../utils/api';
 
 const LoginForm = ({onLoginSuccess}) => {
     const [formData, setFormData] = useState({
@@ -15,35 +16,20 @@ const LoginForm = ({onLoginSuccess}) => {
         }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        setErrorMessage('');
 
-        fetch('http://localhost:8080/api/auth/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(formData)
-        })
-            .then(async (response) => {
-                if (response.status === 200) {
-                    const userData = await response.json();
-
-                    localStorage.setItem('wrenchlog_user', JSON.stringify(userData));
-
-                    onLoginSuccess(userData);
-                } else if (response.status === 401) {
-                    const textError = await response.text();
-                    setErrorMessage(textError);
-                } else {
-                    setErrorMessage('Something went wrong on the server. Please try again.');
-                }
-            })
-            .catch(error => {
-                console.error('Login network error:', error);
-                setErrorMessage('Unable to connect to the server. Check if your backend is running.');
+        try {
+            const data = await api.post('/api/auth/login', {
+                username: formData.username,
+                password: formData.password
             });
+
+            onLoginSuccess(data);
+
+        } catch (error) {
+            console.error("Login failed:", error.message);
+        }
     };
 
     return (
