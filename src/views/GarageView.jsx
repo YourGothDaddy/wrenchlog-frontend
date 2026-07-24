@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../utils/api'
 
-function GarageView({ vehicles, loading, fetchGarage, userId }){
+function GarageView({ vehicles, loading, fetchGarage, username }){
     const navigate = useNavigate()
 
     const [makes, setMakes] = useState([])
@@ -126,7 +126,6 @@ function GarageView({ vehicles, loading, fetchGarage, userId }){
             model: `${selectedModel} ${selectedGeneration} (${selectedModification.modification})`,
             year: year && year !== "" ? parseInt(year): null,
             kilometers: parseInt(kilometers),
-            username: userId
         }
 
         api.post('/api/vehicles', newVehicle)
@@ -159,7 +158,7 @@ function GarageView({ vehicles, loading, fetchGarage, userId }){
 
             <div style={{ border: '2px solid #000', padding: '8px', marginBottom: '15px', backgroundColor: '#f0f0f0' }}>
                 <div style={{ fontSize: '16px', fontWeight: 'bold' }}>WRENCHLOG - VIRTUAL GARAGE</div>
-                <div style={{ fontSize: '11px', marginTop: '2px' }}>USER ID: {userId}</div>
+                <div style={{ fontSize: '11px', marginTop: '2px' }}>USER: {username}</div>
             </div>
 
             <div style={{ border: '1px solid #000', padding: '10px', backgroundColor: '#fafafa', marginBottom: '20px' }}>

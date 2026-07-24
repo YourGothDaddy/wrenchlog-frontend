@@ -69,7 +69,7 @@ function App(){
                         path="/"
                         element={
                             currentUser ? (
-                                <GarageView vehicles={vehicles} loading={loading} fetchGarage={fetchGarage} userId={currentUser.username} />
+                                <GarageView vehicles={vehicles} loading={loading} fetchGarage={fetchGarage} username={currentUser.username} />
                             ) : (
                                 <Navigate to="/login" replace />
                             )
