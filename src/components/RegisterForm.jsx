@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import api from '../utils/api';
 
 const RegisterForm = () => {
     const [formData, setFormData] = useState({
@@ -17,33 +18,19 @@ const RegisterForm = () => {
         }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setErrorMessage('');
         setSuccessMessage('');
 
-        fetch('http://localhost:8080/api/auth/register', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(formData)
-        })
-            .then(async (response) => {
-                if (response.status === 201) {
-                    setSuccessMessage('Account created successfully! You can now log in.');
-                    setFormData({ username: '', email: '', password: '' });
-                } else if (response.status === 400) {
-                    const textError = await response.text();
-                    setErrorMessage(textError);
-                } else {
-                    setErrorMessage('Something went wrong on the server. Please try again.');
-                }
-            })
-            .catch(error => {
-                console.error('Registration network error:', error);
-                setErrorMessage('Unable to connect to the server.');
-            });
+        try {
+            await api.post('/api/auth/register', formData);
+            setSuccessMessage('Account created successfully! You can now log in.');
+            setFormData({ username: '', email: '', password: '' });
+        } catch (error) {
+            console.error('Registration failed:', error.message);
+            setErrorMessage(error.message || 'Something went wrong. Please try again.');
+        }
     };
 
     return (
