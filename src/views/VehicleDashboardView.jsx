@@ -129,7 +129,7 @@ function VehicleDashboardView({ vehicles, userId }) {
             kilometersAtService: parseInt(modalKilometersAtService),
             serviceDate: modalServiceDate
         }
-        api.put(`/api/services/${currentActiveLog.id}?id=${id}`, modifiedServiceLog)
+        api.put(`/api/services/${currentActiveLog.id}?vehicleId=${id}`, modifiedServiceLog)
             .then(() => {
                 setModifyModal(false)
                 fetchServiceLogs()
