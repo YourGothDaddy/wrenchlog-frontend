@@ -20,11 +20,10 @@ function App(){
     const [garageLoading, setGarageLoading] = useState(true)
 
     useEffect(() => {
-        const storedUser = localStorage.getItem('wrenchlog_user');
-        if (storedUser) {
-            setCurrentUser(JSON.parse(storedUser));
-        }
-        setAuthChecked(true);
+        api.get('/api/auth/me')
+            .then(userData => setCurrentUser(userData))
+            .catch(() => setCurrentUser(null))
+            .finally(() => setAuthChecked(true));
     }, []);
 
     const fetchGarage = async () => {
@@ -48,14 +47,18 @@ function App(){
         }
     }, [currentUser]);
 
+
     const handleLoginSuccess = (userData) => {
-        localStorage.setItem('wrenchlog_user', JSON.stringify(userData));
         setCurrentUser(userData);
         navigate('/');
     };
 
-    const handleLogout = () => {
-        localStorage.removeItem('wrenchlog_user');
+    const handleLogout = async () => {
+        try {
+            await api.post('/api/auth/logout', {});
+        } catch (e) {
+            console.error('Logout request failed:', e);
+        }
         setCurrentUser(null);
         navigate('/login');
     };
