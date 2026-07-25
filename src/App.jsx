@@ -16,27 +16,26 @@ function App(){
     const navigate = useNavigate();
     const [currentUser, setCurrentUser] = useState(null);
     const [vehicles, setVehicles] = useState([])
-    const [loading, setLoading] = useState(true)
+    const [authChecked, setAuthChecked] = useState(false)
+    const [garageLoading, setGarageLoading] = useState(true)
 
     useEffect(() => {
         const storedUser = localStorage.getItem('wrenchlog_user');
         if (storedUser) {
             setCurrentUser(JSON.parse(storedUser));
         }
-        setLoading(false);
+        setAuthChecked(true);
     }, []);
 
-    const [make, setMake] = useState('')
-    const [model, setModel] = useState('')
-    const [year, setYear] = useState('')
-    const [mileage, setMileage] = useState('')
-
     const fetchGarage = async () => {
+        setGarageLoading(true);
         try {
             const data = await api.get('/api/vehicles');
             setVehicles(data);
         } catch (error) {
             console.error("Failed to load garage items:", error);
+        } finally {
+            setGarageLoading(false);
         }
     };
 
@@ -45,6 +44,7 @@ function App(){
             fetchGarage();
         } else {
             setVehicles([]);
+            setGarageLoading(false);
         }
     }, [currentUser]);
 
@@ -60,6 +60,10 @@ function App(){
         navigate('/login');
     };
 
+    if (!authChecked) {
+        return null;
+    }
+
     return (
         <>
             <Navbar currentUser={currentUser} onLogout={handleLogout} />
@@ -69,7 +73,7 @@ function App(){
                         path="/"
                         element={
                             currentUser ? (
-                                <GarageView vehicles={vehicles} loading={loading} fetchGarage={fetchGarage} username={currentUser.username} />
+                                <GarageView vehicles={vehicles} loading={garageLoading} fetchGarage={fetchGarage} username={currentUser.username} />
                             ) : (
                                 <Navigate to="/login" replace />
                             )
