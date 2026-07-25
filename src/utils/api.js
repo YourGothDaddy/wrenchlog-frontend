@@ -1,10 +1,5 @@
 const BASE_URL = import.meta.env.VITE_API_URL;
 
-function getCsrfToken() {
-    const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]*)/);
-    return match ? decodeURIComponent(match[1]) : null;
-}
-
 async function request(endpoint, options = {}) {
     const url = `${BASE_URL}${endpoint}`;
 
@@ -12,14 +7,6 @@ async function request(endpoint, options = {}) {
 
     if (options.body && !(options.body instanceof FormData)) {
         headers['Content-Type'] = 'application/json';
-    }
-
-    const method = (options.method || 'GET').toUpperCase();
-    if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
-        const csrfToken = getCsrfToken();
-        if (csrfToken) {
-            headers['X-XSRF-TOKEN'] = csrfToken;
-        }
     }
 
     const config = {
