@@ -18,6 +18,7 @@ const LoginForm = ({onLoginSuccess}) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setErrorMessage('');
 
         try {
             const data = await api.post('/api/auth/login', {
@@ -29,6 +30,7 @@ const LoginForm = ({onLoginSuccess}) => {
 
         } catch (error) {
             console.error("Login failed:", error.message);
+            setErrorMessage(error.message || 'Login failed. Please check your credentials.');
         }
     };
 

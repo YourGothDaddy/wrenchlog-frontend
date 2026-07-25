@@ -23,7 +23,9 @@ async function request(endpoint, options = {}) {
 
     const response = await fetch(url, config);
 
-    if (response.status === 401 || response.status === 403) {
+    const isAuthEndpoint = endpoint.startsWith('/api/auth/');
+
+    if ((response.status === 401 || response.status === 403) && !isAuthEndpoint) {
         localStorage.removeItem('wrenchlog_user');
         window.location.href = '/login';
         return Promise.reject('Session expired. Please log in again.');
