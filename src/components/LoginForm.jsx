@@ -34,85 +34,78 @@ const LoginForm = ({onLoginSuccess}) => {
         }
     };
 
+    const labelStyle = { display: 'block', marginBottom: '4px', fontWeight: 'bold', fontSize: '11px' };
+    const inputStyle = { width: '100%', padding: '6px', boxSizing: 'border-box', border: '1px solid #777', fontFamily: 'monospace', fontSize: '13px', background: '#fff' };
+
     return (
         <div style={{
             maxWidth: '400px',
             margin: '40px auto',
-            padding: '25px',
-            border: '1px solid #ddd',
-            borderRadius: '8px',
-            boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
-            backgroundColor: '#ffffff',
-            fontFamily: 'sans-serif'
+            padding: '15px',
+            border: '2px solid #000',
+            backgroundColor: '#fafafa',
+            fontFamily: 'monospace',
+            color: '#000'
         }}>
-            <h2 style={{ textAlign: 'center', marginBottom: '20px', color: '#333' }}>Sign In</h2>
+            <div style={{ border: '1px solid #000', padding: '8px', marginBottom: '15px', backgroundColor: '#f0f0f0' }}>
+                <div style={{ fontSize: '15px', fontWeight: 'bold' }}>WRENCHLOG - SIGN IN</div>
+                <div style={{ fontSize: '11px', marginTop: '2px', color: '#555' }}>Authenticate to access your garage</div>
+            </div>
 
             {errorMessage && (
                 <div style={{
-                    backgroundColor: '#f8d7da',
-                    color: '#721c24',
-                    padding: '10px',
-                    borderRadius: '4px',
+                    border: '1px solid #a00',
+                    color: '#a00',
+                    padding: '8px',
                     marginBottom: '15px',
-                    fontSize: '0.9em',
-                    border: '1px solid #f5c6cb'
+                    fontSize: '11px',
+                    fontWeight: 'bold',
+                    backgroundColor: '#fff'
                 }}>
-                    {errorMessage}
+                    ERROR: {errorMessage}
                 </div>
             )}
 
-            <form onSubmit={handleSubmit}>
-                <div style={{ marginBottom: '15px' }}>
-                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>Username</label>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div>
+                    <div style={labelStyle}>Username</div>
                     <input
                         type="text"
                         name="username"
                         value={formData.username}
                         onChange={handleChange}
                         required
-                        style={{
-                            width: '100%',
-                            padding: '8px',
-                            boxSizing: 'border-box',
-                            borderRadius: '4px',
-                            border: '1px solid #ccc'
-                        }}
+                        style={inputStyle}
                     />
                 </div>
 
-                <div style={{ marginBottom: '20px' }}>
-                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>Password</label>
+                <div>
+                    <div style={labelStyle}>Password</div>
                     <input
                         type="password"
                         name="password"
                         value={formData.password}
                         onChange={handleChange}
                         required
-                        style={{
-                            width: '100%',
-                            padding: '8px',
-                            boxSizing: 'border-box',
-                            borderRadius: '4px',
-                            border: '1px solid #ccc'
-                        }}
+                        style={inputStyle}
                     />
                 </div>
 
                 <button
                     type="submit"
                     style={{
-                        width: '100%',
-                        backgroundColor: '#28a745',
-                        color: 'white',
-                        border: 'none',
-                        padding: '10px',
+                        padding: '6px',
+                        background: '#e1e1e1',
+                        border: '1px solid #777',
                         cursor: 'pointer',
-                        borderRadius: '4px',
+                        fontSize: '12px',
+                        fontFamily: 'monospace',
                         fontWeight: 'bold',
-                        fontSize: '1em'
+                        color: '#000',
+                        marginTop: '6px'
                     }}
                 >
-                    Sign In
+                    [ Sign In ]
                 </button>
             </form>
         </div>
