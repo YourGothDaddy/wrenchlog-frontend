@@ -68,8 +68,13 @@ function VehicleDashboardView({ vehicles, userId }) {
             .catch(err => console.error(err))
     }
 
+    const handleDownload = async (fileId) => {
+        const { token } = await api.get(`/api/vehicles/${id}/files/${fileId}/download-token`);
+        window.location.href = `http://localhost:8080/api/vehicles/${id}/files/${fileId}/download?token=${token}`;
+    };
+
     const handleDeleteFile = (fileId) => {
-        api.delete(`/api/vehicles/${id}/files/${fileId}?userId=${userId}`)
+        api.delete(`/api/vehicles/${id}/files/${fileId}`)
             .then(() => fetchFiles())
             .catch(err => console.error(err))
     }
@@ -412,9 +417,9 @@ function VehicleDashboardView({ vehicles, userId }) {
                                 {files.map(file => (
                                     <tr key={file.id}>
                                         <td style={tdStyle}>
-                                            <a href={`http://localhost:8080/api/vehicles/${id}/files/${file.id}/download`} target="_blank" rel="noopener noreferrer" style={{ color: '#0056b3', fontWeight: 'bold', textDecoration: 'underline' }}>
+                                            <button onClick={() => handleDownload(file.id)} style={{ color: '#0056b3', textDecoration: 'underline' }}>
                                                 {file.fileName}
-                                            </a>
+                                            </button>
                                         </td>
                                         <td style={{ ...tdStyle, width: '15%', color: '#666' }}>{file.fileType}</td>
                                         <td style={{ ...tdStyle, width: '15%', textAlign: 'center' }}>
