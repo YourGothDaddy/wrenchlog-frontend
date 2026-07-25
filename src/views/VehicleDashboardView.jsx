@@ -74,6 +74,10 @@ function VehicleDashboardView({ vehicles, userId }) {
     };
 
     const handleDeleteFile = (fileId) => {
+        if (!window.confirm("Delete this file? This cannot be undone.")) {
+            return;
+        }
+
         api.delete(`/api/vehicles/${id}/files/${fileId}`)
             .then(() => fetchFiles())
             .catch(err => console.error(err))
@@ -98,6 +102,10 @@ function VehicleDashboardView({ vehicles, userId }) {
     }
 
     const handleDeleteServiceLog = (serviceLogId) => {
+        if (!window.confirm("Delete this service log entry? This cannot be undone.")) {
+            return;
+        }
+
         api.delete(`/api/services/${serviceLogId}`)
             .then(() => fetchServiceLogs())
             .catch(err => console.error(err))
@@ -145,6 +153,10 @@ function VehicleDashboardView({ vehicles, userId }) {
     }
 
     const handleDeleteNote = (noteId) => {
+        if (!window.confirm("Delete this note? This cannot be undone.")) {
+            return;
+        }
+
         api.delete(`/api/vehicles/${id}/notes/${noteId}`)
             .then(() => fetchNotes())
             .catch(err => console.error(err))
@@ -191,6 +203,10 @@ function VehicleDashboardView({ vehicles, userId }) {
     }
 
     const handleDeleteReminder = (reminderId) => {
+        if (!window.confirm("Delete this reminder? This cannot be undone.")) {
+            return;
+        }
+
         api.delete(`/api/reminders/${reminderId}`)
             .then(() => fetchReminders())
             .catch(err => console.error(err))

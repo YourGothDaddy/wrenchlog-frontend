@@ -140,6 +140,10 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
     const handleDeleteVehicle = (vehicleId, e) => {
         e.stopPropagation()
 
+        if (!window.confirm("Delete this vehicle? This cannot be undone.")) {
+            return;
+        }
+
         api.delete(`/api/vehicles/${vehicleId}`)
             .then(() => {
                 fetchGarage()
