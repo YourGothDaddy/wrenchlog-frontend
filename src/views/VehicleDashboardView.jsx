@@ -43,34 +43,55 @@ function VehicleDashboardView({ vehicles, userId }) {
     const [showReminderForm, setShowReminderForm] = useState(false)
     const [editingReminderId, setEditingReminderId] = useState(null)
 
+    const [errorMessage, setErrorMessage] = useState('')
+
     const fetchServiceLogs = () => {
         if (!vehicle) return
         api.get(`/api/services?vehicleId=${id}`)
             .then(logs => { setServiceLogs(logs); setLoading(false); })
-            .catch(() => setLoading(false))
+            .catch(err => {
+                console.error(err)
+                setLoading(false)
+                setErrorMessage(err.message || 'Failed to load service logs.')
+            })
     }
 
     const fetchFiles = () => {
         api.get(`/api/vehicles/${id}/files`)
             .then(data => setFiles(data))
-            .catch(err => console.error(err))
+            .catch(err => {
+                console.error(err)
+                setErrorMessage(err.message || 'Failed to load files.')
+            })
     }
 
     const fetchNotes = () => {
         api.get(`/api/vehicles/${id}/notes`)
             .then(data => setNotes(data))
-            .catch(err => console.error(err))
+            .catch(err => {
+                console.error(err)
+                setErrorMessage(err.message || 'Failed to load notes.')
+            })
     }
 
     const fetchReminders = () => {
         api.get(`/api/reminders?vehicleId=${id}`)
             .then(data => setReminders(data))
-            .catch(err => console.error(err))
+            .catch(err => {
+                console.error(err)
+                setErrorMessage(err.message || 'Failed to load reminders.')
+            })
     }
 
     const handleDownload = async (fileId) => {
-        const { token } = await api.get(`/api/vehicles/${id}/files/${fileId}/download-token`);
-        window.location.href = `http://localhost:8080/api/vehicles/${id}/files/${fileId}/download?token=${token}`;
+        setErrorMessage('')
+        try {
+            const { token } = await api.get(`/api/vehicles/${id}/files/${fileId}/download-token`);
+            window.location.href = `http://localhost:8080/api/vehicles/${id}/files/${fileId}/download?token=${token}`;
+        } catch (err) {
+            console.error(err)
+            setErrorMessage(err.message || 'Failed to download file.')
+        }
     };
 
     const handleDeleteFile = (fileId) => {
@@ -78,9 +99,14 @@ function VehicleDashboardView({ vehicles, userId }) {
             return;
         }
 
+        setErrorMessage('')
+
         api.delete(`/api/vehicles/${id}/files/${fileId}`)
             .then(() => fetchFiles())
-            .catch(err => console.error(err))
+            .catch(err => {
+                console.error(err)
+                setErrorMessage(err.message || 'Failed to delete file.')
+            })
     }
 
     useEffect(() => {
@@ -92,13 +118,17 @@ function VehicleDashboardView({ vehicles, userId }) {
 
     const handleAddServiceLog = (e) => {
         e.preventDefault()
+        setErrorMessage('')
         const newLog = { description, cost: parseFloat(cost), kilometersAtService: parseInt(kilometersAtService), serviceDate }
         api.post(`/api/services?vehicleId=${id}`, newLog)
             .then(() => {
                 setDescription(''); setCost(''); setKilometersAtService(''); setServiceDate('');
                 fetchServiceLogs()
             })
-            .catch(err => console.error(err))
+            .catch(err => {
+                console.error(err)
+                setErrorMessage(err.message || 'Failed to add service log.')
+            })
     }
 
     const handleDeleteServiceLog = (serviceLogId) => {
@@ -106,9 +136,14 @@ function VehicleDashboardView({ vehicles, userId }) {
             return;
         }
 
+        setErrorMessage('')
+
         api.delete(`/api/services/${serviceLogId}`)
             .then(() => fetchServiceLogs())
-            .catch(err => console.error(err))
+            .catch(err => {
+                console.error(err)
+                setErrorMessage(err.message || 'Failed to delete service log.')
+            })
     }
 
     const handleModifyServiceLogModal = (log) => {
@@ -123,6 +158,7 @@ function VehicleDashboardView({ vehicles, userId }) {
 
     const handleModifyServiceLog = (e) => {
         e.preventDefault()
+        setErrorMessage('')
         const modifiedServiceLog = {
             description: modalDescription,
             cost: parseFloat(modalCost),
@@ -134,18 +170,25 @@ function VehicleDashboardView({ vehicles, userId }) {
                 setModifyModal(false)
                 fetchServiceLogs()
             })
-            .catch(err => console.error(err))
+            .catch(err => {
+                console.error(err)
+                setErrorMessage(err.message || 'Failed to update service log.')
+            })
     }
 
     const handleSaveNote = (e) => {
         e.preventDefault()
+        setErrorMessage('')
         const payload = { title: noteTitle, content: noteContent }
         const isEditing = editingNoteId !== null
         const endpoint = isEditing ? `/api/vehicles/${id}/notes/${editingNoteId}` : `/api/vehicles/${id}/notes`
 
         const request = isEditing ? api.put(endpoint, payload) : api.post(endpoint, payload)
         request.then(() => { setNoteTitle(''); setNoteContent(''); setEditingNoteId(null); fetchNotes(); })
-            .catch(err => console.error(err))
+            .catch(err => {
+                console.error(err)
+                setErrorMessage(err.message || 'Failed to save note.')
+            })
     }
 
     const handleEditNoteSetup = (note) => {
@@ -157,13 +200,19 @@ function VehicleDashboardView({ vehicles, userId }) {
             return;
         }
 
+        setErrorMessage('')
+
         api.delete(`/api/vehicles/${id}/notes/${noteId}`)
             .then(() => fetchNotes())
-            .catch(err => console.error(err))
+            .catch(err => {
+                console.error(err)
+                setErrorMessage(err.message || 'Failed to delete note.')
+            })
     }
 
     const handleSaveReminder = (e) => {
         e.preventDefault()
+        setErrorMessage('')
         const payload = {
             title: reminderTitle,
             description: reminderDesc,
@@ -177,10 +226,14 @@ function VehicleDashboardView({ vehicles, userId }) {
 
         const request = isEditing ? api.put(endpoint, payload) : api.post(endpoint, payload)
         request.then(() => { clearReminderForm(); fetchReminders(); })
-            .catch(err => console.error(err))
+            .catch(err => {
+                console.error(err)
+                setErrorMessage(err.message || 'Failed to save reminder.')
+            })
     }
 
     const handleResetReminder = (reminder) => {
+        setErrorMessage('')
         const today = new Date().toISOString().split('T')[0]
         const payload = {
             title: reminder.title,
@@ -192,7 +245,10 @@ function VehicleDashboardView({ vehicles, userId }) {
         }
         api.put(`/api/reminders/${reminder.id}?vehicleId=${id}`, payload)
             .then(() => fetchReminders())
-            .catch(err => console.error(err))
+            .catch(err => {
+                console.error(err)
+                setErrorMessage(err.message || 'Failed to reset reminder.')
+            })
     }
 
     const handleEditReminderSetup = (reminder) => {
@@ -207,9 +263,14 @@ function VehicleDashboardView({ vehicles, userId }) {
             return;
         }
 
+        setErrorMessage('')
+
         api.delete(`/api/reminders/${reminderId}`)
             .then(() => fetchReminders())
-            .catch(err => console.error(err))
+            .catch(err => {
+                console.error(err)
+                setErrorMessage(err.message || 'Failed to delete reminder.')
+            })
     }
 
     const clearReminderForm = () => {
@@ -245,6 +306,12 @@ function VehicleDashboardView({ vehicles, userId }) {
             <div style={{ marginBottom: '10px' }}>
                 <button onClick={() => navigate('/')} style={baseButtonStyle}>[Return to Garage]</button>
             </div>
+
+            {errorMessage && (
+                <div style={{ border: '1px solid #a00', color: '#a00', padding: '8px', marginBottom: '15px', fontSize: '11px', fontWeight: 'bold', backgroundColor: '#fff' }}>
+                    ERROR: {errorMessage}
+                </div>
+            )}
 
             <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '15px', border: '2px solid #000' }}>
                 <tbody>
@@ -365,11 +432,15 @@ function VehicleDashboardView({ vehicles, userId }) {
                                 type="file"
                                 style={{ fontSize: '11px', width: '100%', marginBottom: '8px' }}
                                 onChange={(e) => {
+                                    setErrorMessage('')
                                     const formData = new FormData()
                                     formData.append("file", e.target.files[0])
                                     api.post(`/api/vehicles/${id}/files`, formData)
                                         .then(() => fetchFiles())
-                                        .catch(err => console.error(err))
+                                        .catch(err => {
+                                            console.error(err)
+                                            setErrorMessage(err.message || 'Failed to upload file.')
+                                        })
                                 }}
                             />
                             <div style={{ fontSize: '10px', color: '#666' }}>Upload system receipts or datasheets.</div>

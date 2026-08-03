@@ -18,14 +18,21 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
     const [year, setYear] = useState('')
     const [kilometers, setKilometers] = useState('')
 
+    const [errorMessage, setErrorMessage] = useState('')
+
     useEffect(() => {
+        setErrorMessage('')
         api.get('/api/catalog/makes')
             .then(data => setMakes(data))
-            .catch(err => console.error(err))
+            .catch(err => {
+                console.error(err)
+                setErrorMessage(err.message || 'Failed to load vehicle makes.')
+            })
     }, [])
 
     useEffect(() => {
         if (!selectedMake) { setModels([]); return; }
+        setErrorMessage('')
         api.get(`/api/catalog/models?make=${encodeURIComponent(selectedMake)}`)
             .then(data => {
                 setModels(data)
@@ -36,11 +43,15 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
                 setSelectedModification(null)
                 setYear('')
             })
-            .catch(err => console.error(err))
+            .catch(err => {
+                console.error(err)
+                setErrorMessage(err.message || 'Failed to load models.')
+            })
     }, [selectedMake])
 
     useEffect(() => {
         if (!selectedModel) { setGenerations([]); return; }
+        setErrorMessage('')
         api.get(`/api/catalog/generations?make=${encodeURIComponent(selectedMake)}&model=${encodeURIComponent(selectedModel)}`)
             .then(data => {
                 if(Array.isArray(data)){
@@ -64,12 +75,13 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
                 console.error(err);
                 setGenerations([]);
                 setSelectedGeneration('');
+                setErrorMessage(err.message || 'Failed to load generations.')
             })
     }, [selectedModel, selectedMake])
 
     useEffect(() => {
         if (!selectedGeneration) { setModifications([]); return; }
-
+        setErrorMessage('')
         api.get(`/api/catalog/modifications?make=${encodeURIComponent(selectedMake)}&model=${encodeURIComponent(selectedModel)}&generation=${encodeURIComponent(selectedGeneration)}`)
             .then(data => {
                 if (Array.isArray(data)) {
@@ -83,6 +95,7 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
             .catch(err => {
                 console.error(err);
                 setModifications([]);
+                setErrorMessage(err.message || 'Failed to load modifications.')
             });
     }, [selectedGeneration, selectedModel, selectedMake])
 
@@ -120,6 +133,7 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
 
     const handleAddVehicle = (e) => {
         e.preventDefault()
+        setErrorMessage('')
 
         const newVehicle = {
             make: selectedMake,
@@ -134,7 +148,10 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
                 setKilometers('')
                 fetchGarage()
             })
-            .catch(error => console.error(error))
+            .catch(error => {
+                console.error(error)
+                setErrorMessage(error.message || 'Failed to add vehicle.')
+            })
     }
 
     const handleDeleteVehicle = (vehicleId, e) => {
@@ -144,11 +161,16 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
             return;
         }
 
+        setErrorMessage('')
+
         api.delete(`/api/vehicles/${vehicleId}`)
             .then(() => {
                 fetchGarage()
             })
-            .catch(error => console.error(error))
+            .catch(error => {
+                console.error(error)
+                setErrorMessage(error.message || 'Failed to delete vehicle.')
+            })
     }
 
     const baseSelectStyle = { padding: '4px', border: '1px solid #777', background: '#fff', fontSize: '12px', fontFamily: 'monospace', width: '100%', boxSizing: 'border-box' };
@@ -164,6 +186,12 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
                 <div style={{ fontSize: '16px', fontWeight: 'bold' }}>WRENCHLOG - VIRTUAL GARAGE</div>
                 <div style={{ fontSize: '11px', marginTop: '2px' }}>USER: {username}</div>
             </div>
+
+            {errorMessage && (
+                <div style={{ border: '1px solid #a00', color: '#a00', padding: '8px', marginBottom: '15px', fontSize: '11px', fontWeight: 'bold', backgroundColor: '#fff' }}>
+                    ERROR: {errorMessage}
+                </div>
+            )}
 
             <div style={{ border: '1px solid #000', padding: '10px', backgroundColor: '#fafafa', marginBottom: '20px' }}>
                 <div style={{ fontWeight: 'bold', borderBottom: '1px solid #000', paddingBottom: '3px', marginBottom: '10px', fontSize: '13px' }}>Add New Vehicle</div>
