@@ -1,117 +1,29 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../utils/api'
+import useVehicleCatalog from '../hooks/useVehicleCatalog'
 
 function GarageView({ vehicles, loading, fetchGarage, username }){
     const navigate = useNavigate()
 
-    const [makes, setMakes] = useState([])
-    const [models, setModels] = useState([])
-    const [generations, setGenerations] = useState([])
-    const [modifications, setModifications] = useState([])
-
-    const [selectedMake, setSelectedMake] = useState('')
-    const [selectedModel, setSelectedModel] = useState('')
-    const [selectedGeneration, setSelectedGeneration] = useState('')
-    const [selectedModification, setSelectedModification] = useState(null)
-
-    const [year, setYear] = useState('')
+    const [errorMessage, setErrorMessage] = useState('')
     const [kilometers, setKilometers] = useState('')
 
-    const [errorMessage, setErrorMessage] = useState('')
-
-    useEffect(() => {
-        setErrorMessage('')
-        api.get('/api/catalog/makes')
-            .then(data => setMakes(data))
-            .catch(err => {
-                console.error(err)
-                setErrorMessage(err.message || 'Failed to load vehicle makes.')
-            })
-    }, [])
-
-    useEffect(() => {
-        if (!selectedMake) { setModels([]); return; }
-        setErrorMessage('')
-        api.get(`/api/catalog/models?make=${encodeURIComponent(selectedMake)}`)
-            .then(data => {
-                setModels(data)
-                setGenerations([])
-                setModifications([])
-                setSelectedModel('')
-                setSelectedGeneration('')
-                setSelectedModification(null)
-                setYear('')
-            })
-            .catch(err => {
-                console.error(err)
-                setErrorMessage(err.message || 'Failed to load models.')
-            })
-    }, [selectedMake])
-
-    useEffect(() => {
-        if (!selectedModel) { setGenerations([]); return; }
-        setErrorMessage('')
-        api.get(`/api/catalog/generations?make=${encodeURIComponent(selectedMake)}&model=${encodeURIComponent(selectedModel)}`)
-            .then(data => {
-                if(Array.isArray(data)){
-                    const realGenerations = data.filter(gen => gen && gen.trim() !== "" && gen.toUpperCase() !== "N/A");
-                    setGenerations(data);
-
-                    if(realGenerations.length === 0 && data.length > 0){
-                        setSelectedGeneration(data[0]);
-                    }else {
-                        setSelectedGeneration('');
-                    }
-                }else{
-                    setGenerations([]);
-                    setSelectedGeneration('')
-                }
-                setModifications([])
-                setSelectedModification(null)
-                setYear('')
-            })
-            .catch(err => {
-                console.error(err);
-                setGenerations([]);
-                setSelectedGeneration('');
-                setErrorMessage(err.message || 'Failed to load generations.')
-            })
-    }, [selectedModel, selectedMake])
-
-    useEffect(() => {
-        if (!selectedGeneration) { setModifications([]); return; }
-        setErrorMessage('')
-        api.get(`/api/catalog/modifications?make=${encodeURIComponent(selectedMake)}&model=${encodeURIComponent(selectedModel)}&generation=${encodeURIComponent(selectedGeneration)}`)
-            .then(data => {
-                if (Array.isArray(data)) {
-                    setModifications(data);
-                } else {
-                    setModifications([]);
-                }
-                setSelectedModification(null);
-                setYear('');
-            })
-            .catch(err => {
-                console.error(err);
-                setModifications([]);
-                setErrorMessage(err.message || 'Failed to load modifications.')
-            });
-    }, [selectedGeneration, selectedModel, selectedMake])
-
-    const checkProductionYearsIsLegit = () => {
-        if(selectedModification){
-            const startYear = selectedModification.startYear;
-            return startYear >= 1885;
-        }else{
-            return true;
-        }
-    }
+    const {
+        makes, models, generations, modifications,
+        selectedMake, setSelectedMake,
+        selectedModel, setSelectedModel,
+        selectedGeneration, setSelectedGeneration,
+        selectedModification, setSelectedModification,
+        year, setYear,
+        isProductionYearRangeValid,
+        resetSelections
+    } = useVehicleCatalog(setErrorMessage)
 
     const renderYearOptions = () => {
         if (!selectedModification) return <option value="">Choose Modification First</option>
 
-        if(!checkProductionYearsIsLegit()){
+        if (!isProductionYearRangeValid()) {
             return <option value="">No available production years</option>
         }
 
@@ -138,13 +50,13 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
         const newVehicle = {
             make: selectedMake,
             model: `${selectedModel} ${selectedGeneration} (${selectedModification.modification})`,
-            year: year && year !== "" ? parseInt(year): null,
+            year: year && year !== "" ? parseInt(year) : null,
             kilometers: parseInt(kilometers),
         }
 
         api.post('/api/vehicles', newVehicle)
             .then(() => {
-                setSelectedMake('')
+                resetSelections()
                 setKilometers('')
                 fetchGarage()
             })
@@ -250,7 +162,7 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
                     <div>
                         <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>Year of Manufacture</div>
                         {
-                            checkProductionYearsIsLegit() ? (
+                            isProductionYearRangeValid() ? (
                                 <select value={year} onChange={e => setYear(e.target.value)} disabled={!selectedModification} required style={baseSelectStyle}>
                                     {renderYearOptions()}
                                 </select>
