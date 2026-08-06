@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from "react"
-import api from '../utils/api'
+import api, { BASE_URL } from '../utils/api'
 
 function VehicleDashboardView({ vehicles, userId }) {
     const { id } = useParams()
@@ -87,7 +87,7 @@ function VehicleDashboardView({ vehicles, userId }) {
         setErrorMessage('')
         try {
             const { token } = await api.get(`/api/vehicles/${id}/files/${fileId}/download-token`);
-            window.location.href = `http://localhost:8080/api/vehicles/${id}/files/${fileId}/download?token=${token}`;
+            window.location.href = `${BASE_URL}/api/vehicles/${id}/files/${fileId}/download?token=${token}`;
         } catch (err) {
             console.error(err)
             setErrorMessage(err.message || 'Failed to download file.')
