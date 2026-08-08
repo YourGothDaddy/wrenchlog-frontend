@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from "react"
 import api, { BASE_URL } from '../utils/api'
+import { formatDate } from '../utils/dateFormat'
 
 function VehicleDashboardView({ vehicles, userId }) {
     const { id } = useParams()
@@ -399,7 +400,7 @@ function VehicleDashboardView({ vehicles, userId }) {
                                             </td>
                                             <td style={tdStyle}>
                                                 {rem.intervalOdometer && <div>Odo: Every {rem.intervalOdometer.toLocaleString()} km (Last: {rem.lastServiceAtOdometer?.toLocaleString()} km)</div>}
-                                                {rem.intervalMonths && <div>Time: Every {rem.intervalMonths} Mos (Last: {rem.lastServiceAtDate || "None"})</div>}
+                                                {rem.intervalMonths && <div>Time: Every {rem.intervalMonths} months (Last: {rem.lastServiceAtDate ? formatDate(rem.lastServiceAtDate) : "None"})</div>}
                                             </td>
                                             <td style={tdStyle}>
                                                 <button onClick={() => handleResetReminder(rem)} style={{ ...baseButtonStyle, background: isDue ? '#ffcccc' : '#ccffcc', padding: '2px 4px' }}>[ Reset Cycle ]</button>
@@ -481,7 +482,7 @@ function VehicleDashboardView({ vehicles, userId }) {
                                 <tbody>
                                 {serviceLogs.map(log => (
                                     <tr key={log.id}>
-                                        <td style={tdStyle}>{log.serviceDate}</td>
+                                        <td style={tdStyle}>{formatDate(log.serviceDate)}</td>
                                         <td style={tdStyle}>{log.description}</td>
                                         <td style={tdStyle}>{log.kilometersAtService.toLocaleString()} km</td>
                                         <td style={tdStyle}>€{log.cost.toFixed(2)}</td>
