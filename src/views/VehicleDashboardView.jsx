@@ -44,6 +44,14 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
     const [showReminderForm, setShowReminderForm] = useState(false)
     const [editingReminderId, setEditingReminderId] = useState(null)
 
+    const [showDetailsForm, setShowDetailsForm] = useState(false)
+    const [detailsForm, setDetailsForm] = useState({
+        vin: '', plateNumber: '', engineCode: '', transmissionType: '', driveType: '',
+        color: '', fuelType: '', fuelTankCapacityLiters: '', engineOilCapacityLiters: '',
+        engineOilType: '', tireSize: '', purchaseDate: '', purchasePrice: '',
+        insuranceExpiryDate: '', vignetteExpiryDate: '', inspectionDueDate: ''
+    })
+
     const [errorMessage, setErrorMessage] = useState('')
 
     const fetchServiceLogs = () => {
@@ -275,6 +283,48 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
             })
     }
 
+    const openDetailsForm = () => {
+        setDetailsForm({
+            vin: vehicle.vin || '', plateNumber: vehicle.plateNumber || '', engineCode: vehicle.engineCode || '',
+            transmissionType: vehicle.transmissionType || '', driveType: vehicle.driveType || '',
+            color: vehicle.color || '', fuelType: vehicle.fuelType || '',
+            fuelTankCapacityLiters: vehicle.fuelTankCapacityLiters || '',
+            engineOilCapacityLiters: vehicle.engineOilCapacityLiters || '',
+            engineOilType: vehicle.engineOilType || '', tireSize: vehicle.tireSize || '',
+            purchaseDate: vehicle.purchaseDate || '', purchasePrice: vehicle.purchasePrice || '',
+            insuranceExpiryDate: '', vignetteExpiryDate: '', inspectionDueDate: ''
+        })
+        setShowDetailsForm(true)
+    }
+
+    const handleSaveDetails = (e) => {
+        e.preventDefault()
+        setErrorMessage('')
+        const payload = {
+            ...detailsForm,
+            fuelTankCapacityLiters: detailsForm.fuelTankCapacityLiters ? parseFloat(detailsForm.fuelTankCapacityLiters) : null,
+            engineOilCapacityLiters: detailsForm.engineOilCapacityLiters ? parseFloat(detailsForm.engineOilCapacityLiters) : null,
+            purchasePrice: detailsForm.purchasePrice ? parseFloat(detailsForm.purchasePrice) : null,
+            transmissionType: detailsForm.transmissionType || null,
+            driveType: detailsForm.driveType || null,
+            fuelType: detailsForm.fuelType || null,
+            purchaseDate: detailsForm.purchaseDate || null,
+            insuranceExpiryDate: detailsForm.insuranceExpiryDate || null,
+            vignetteExpiryDate: detailsForm.vignetteExpiryDate || null,
+            inspectionDueDate: detailsForm.inspectionDueDate || null
+        }
+        api.put(`/api/vehicles/${id}/details`, payload)
+            .then(() => {
+                setShowDetailsForm(false)
+                fetchGarage()
+                fetchReminders()
+            })
+            .catch(err => {
+                console.error(err)
+                setErrorMessage(err.message || 'Failed to save vehicle details.')
+            })
+    }
+
     const clearReminderForm = () => {
         setReminderTitle(''); setReminderDesc(''); setLastServiceOdo('');
         setIntervalOdo(''); setIntervalMonths(''); setLastServiceDate('');
@@ -435,6 +485,98 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                 })}
                                 </tbody>
                             </table>
+                        )}
+                    </div>
+
+                    <div style={{ border: '1px solid #000', padding: '10px', marginBottom: '15px', backgroundColor: '#fafafa' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #000', paddingBottom: '4px', marginBottom: '8px' }}>
+                            <span style={{ fontWeight: 'bold', fontSize: '13px' }}>VEHICLE SPECIFICATIONS</span>
+                            <button onClick={showDetailsForm ? () => setShowDetailsForm(false) : openDetailsForm} style={baseButtonStyle}>
+                                {showDetailsForm ? "[ Cancel ]" : "[ Edit Details ]"}
+                            </button>
+                        </div>
+
+                        {!showDetailsForm ? (
+                            <div style={{ fontSize: '12px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '4px' }}>
+                                <div>VIN: {vehicle.vin || '—'}</div>
+                                <div>Plate: {vehicle.plateNumber || '—'}</div>
+                                <div>Engine: {vehicle.engineCode || '—'}</div>
+                                <div>Transmission: {vehicle.transmissionType || '—'}</div>
+                                <div>Drive: {vehicle.driveType || '—'}</div>
+                                <div>Color: {vehicle.color || '—'}</div>
+                                <div>Fuel: {vehicle.fuelType || '—'}</div>
+                                <div>Tank: {vehicle.fuelTankCapacityLiters ? `${vehicle.fuelTankCapacityLiters} L` : '—'}</div>
+                                <div>Oil: {vehicle.engineOilCapacityLiters ? `${vehicle.engineOilCapacityLiters} L ${vehicle.engineOilType || ''}` : '—'}</div>
+                                <div>Tires: {vehicle.tireSize || '—'}</div>
+                                <div>Purchased: {vehicle.purchaseDate ? formatDate(vehicle.purchaseDate) : '—'}</div>
+                                <div>Price: {vehicle.purchasePrice ? `€${vehicle.purchasePrice}` : '—'}</div>
+                            </div>
+                        ) : (
+                            <form onSubmit={handleSaveDetails} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px' }}>
+                                <input placeholder="VIN" value={detailsForm.vin} onChange={e => setDetailsForm({...detailsForm, vin: e.target.value})} style={baseInputStyle} />
+                                <input placeholder="Plate Number" value={detailsForm.plateNumber} onChange={e => setDetailsForm({...detailsForm, plateNumber: e.target.value})} style={baseInputStyle} />
+                                <input placeholder="Engine Code" value={detailsForm.engineCode} onChange={e => setDetailsForm({...detailsForm, engineCode: e.target.value})} style={baseInputStyle} />
+
+                                <select value={detailsForm.transmissionType} onChange={e => setDetailsForm({...detailsForm, transmissionType: e.target.value})} style={baseInputStyle}>
+                                    <option value="">Transmission</option>
+                                    <option value="MANUAL">Manual</option>
+                                    <option value="AUTOMATIC">Automatic</option>
+                                    <option value="CVT">CVT</option>
+                                    <option value="DCT">DCT</option>
+                                    <option value="SEMI_AUTOMATIC">Semi-Automatic</option>
+                                </select>
+
+                                <select value={detailsForm.driveType} onChange={e => setDetailsForm({...detailsForm, driveType: e.target.value})} style={baseInputStyle}>
+                                    <option value="">Drive Type</option>
+                                    <option value="FWD">FWD</option>
+                                    <option value="RWD">RWD</option>
+                                    <option value="AWD">AWD</option>
+                                    <option value="FOUR_WD">4WD</option>
+                                </select>
+
+                                <select value={detailsForm.fuelType} onChange={e => setDetailsForm({...detailsForm, fuelType: e.target.value})} style={baseInputStyle}>
+                                    <option value="">Fuel Type</option>
+                                    <option value="PETROL">Petrol</option>
+                                    <option value="DIESEL">Diesel</option>
+                                    <option value="ELECTRIC">Electric</option>
+                                    <option value="HYBRID">Hybrid</option>
+                                    <option value="LPG">LPG</option>
+                                    <option value="CNG">CNG</option>
+                                </select>
+
+                                <input placeholder="Color" value={detailsForm.color} onChange={e => setDetailsForm({...detailsForm, color: e.target.value})} style={baseInputStyle} />
+                                <input type="number" step="0.1" placeholder="Fuel Tank (L)" value={detailsForm.fuelTankCapacityLiters} onChange={e => setDetailsForm({...detailsForm, fuelTankCapacityLiters: e.target.value})} style={baseInputStyle} />
+                                <input type="number" step="0.01" placeholder="Oil Capacity (L)" value={detailsForm.engineOilCapacityLiters} onChange={e => setDetailsForm({...detailsForm, engineOilCapacityLiters: e.target.value})} style={baseInputStyle} />
+                                <input placeholder="Oil Type (e.g. 5W-30)" value={detailsForm.engineOilType} onChange={e => setDetailsForm({...detailsForm, engineOilType: e.target.value})} style={baseInputStyle} />
+                                <input placeholder="Tire Size" value={detailsForm.tireSize} onChange={e => setDetailsForm({...detailsForm, tireSize: e.target.value})} style={baseInputStyle} />
+
+                                <div>
+                                    <div style={{ fontSize: '10px' }}>Purchase Date</div>
+                                    <input type="date" value={detailsForm.purchaseDate} onChange={e => setDetailsForm({...detailsForm, purchaseDate: e.target.value})} style={baseInputStyle} />
+                                </div>
+                                <input type="number" step="0.01" placeholder="Purchase Price (€)" value={detailsForm.purchasePrice} onChange={e => setDetailsForm({...detailsForm, purchasePrice: e.target.value})} style={baseInputStyle} />
+
+                                <div style={{ gridColumn: 'span 3', borderTop: '1px dashed #000', marginTop: '4px', paddingTop: '6px', fontSize: '11px', fontWeight: 'bold' }}>
+                                    Set dates below to auto-create reminders
+                                </div>
+
+                                <div>
+                                    <div style={{ fontSize: '10px' }}>Insurance Expiry</div>
+                                    <input type="date" value={detailsForm.insuranceExpiryDate} onChange={e => setDetailsForm({...detailsForm, insuranceExpiryDate: e.target.value})} style={baseInputStyle} />
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: '10px' }}>Vignette Expiry</div>
+                                    <input type="date" value={detailsForm.vignetteExpiryDate} onChange={e => setDetailsForm({...detailsForm, vignetteExpiryDate: e.target.value})} style={baseInputStyle} />
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: '10px' }}>Inspection Due</div>
+                                    <input type="date" value={detailsForm.inspectionDueDate} onChange={e => setDetailsForm({...detailsForm, inspectionDueDate: e.target.value})} style={baseInputStyle} />
+                                </div>
+
+                                <div style={{ gridColumn: 'span 3', marginTop: '4px' }}>
+                                    <button type="submit" style={{ ...baseButtonStyle, width: '100%', padding: '6px' }}>[ Save Specifications ]</button>
+                                </div>
+                            </form>
                         )}
                     </div>
 
