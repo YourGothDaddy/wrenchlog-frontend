@@ -3,7 +3,7 @@ import { useEffect, useState } from "react"
 import api, { BASE_URL } from '../utils/api'
 import { formatDate } from '../utils/dateFormat'
 
-function VehicleDashboardView({ vehicles, userId }) {
+function VehicleDashboardView({ vehicles, fetchGarage  }) {
     const { id } = useParams()
     const navigate = useNavigate()
 
@@ -125,6 +125,7 @@ function VehicleDashboardView({ vehicles, userId }) {
             .then(() => {
                 setDescription(''); setCost(''); setKilometersAtService(''); setServiceDate('');
                 fetchServiceLogs()
+                fetchGarage()
             })
             .catch(err => {
                 console.error(err)
@@ -293,6 +294,27 @@ function VehicleDashboardView({ vehicles, userId }) {
         return odoDue || dateDue;
     }
 
+    const getDueSummary = (reminder) => {
+        const parts = []
+
+        if (reminder.intervalOdometer && reminder.lastServiceAtOdometer !== null && reminder.lastServiceAtOdometer !== undefined) {
+            const kmRemaining = (reminder.lastServiceAtOdometer + reminder.intervalOdometer) - vehicle.kilometers
+            if (kmRemaining > 0) {
+                parts.push(`${kmRemaining.toLocaleString()} km remaining`)
+            } else {
+                parts.push(`${Math.abs(kmRemaining).toLocaleString()} km overdue`)
+            }
+        }
+
+        if (reminder.intervalMonths && reminder.lastServiceAtDate) {
+            const nextDueDate = new Date(reminder.lastServiceAtDate)
+            nextDueDate.setMonth(nextDueDate.getMonth() + reminder.intervalMonths)
+            parts.push(`due ${formatDate(nextDueDate.toISOString().split('T')[0])}`)
+        }
+
+        return parts.join(' · ')
+    }
+
     if (loading) return <div style={{ padding: '10px', fontFamily: 'monospace' }}>Loading workspace...</div>
     if (!vehicle) return <div style={{ padding: '10px', fontFamily: 'monospace' }}><p>Vehicle not found.</p><button onClick={() => navigate('/')}>Back</button></div>
 
@@ -401,6 +423,7 @@ function VehicleDashboardView({ vehicles, userId }) {
                                             <td style={tdStyle}>
                                                 {rem.intervalOdometer && <div>Odo: Every {rem.intervalOdometer.toLocaleString()} km (Last: {rem.lastServiceAtOdometer?.toLocaleString()} km)</div>}
                                                 {rem.intervalMonths && <div>Time: Every {rem.intervalMonths} months (Last: {rem.lastServiceAtDate ? formatDate(rem.lastServiceAtDate) : "None"})</div>}
+                                                <div style={{ fontWeight: 'bold', marginTop: '4px', fontSize: '11px' }}>{getDueSummary(rem)}</div>
                                             </td>
                                             <td style={tdStyle}>
                                                 <button onClick={() => handleResetReminder(rem)} style={{ ...baseButtonStyle, background: isDue ? '#ffcccc' : '#ccffcc', padding: '2px 4px' }}>[ Reset Cycle ]</button>
