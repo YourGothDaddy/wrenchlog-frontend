@@ -52,6 +52,8 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
         insuranceExpiryDate: '', vignetteExpiryDate: '', inspectionDueDate: ''
     })
 
+    const [vignetteCheck, setVignetteCheck] = useState(null)
+
     const [errorMessage, setErrorMessage] = useState('')
 
     const fetchServiceLogs = () => {
@@ -92,6 +94,13 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
             })
     }
 
+    const fetchVignetteCheck = () => {
+        if (!vehicle) return
+        api.get(`/api/vehicles/${id}/vignette-check`)
+            .then(data => setVignetteCheck(data))
+            .catch(err => console.error(err))
+    }
+
     const handleDownload = async (fileId) => {
         setErrorMessage('')
         try {
@@ -123,6 +132,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
         fetchFiles()
         fetchNotes()
         fetchReminders()
+        fetchVignetteCheck()
     }, [id, vehicle])
 
     const handleAddServiceLog = (e) => {
@@ -235,7 +245,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
         const endpoint = isEditing ? `/api/reminders/${editingReminderId}?vehicleId=${id}` : `/api/reminders?vehicleId=${id}`
 
         const request = isEditing ? api.put(endpoint, payload) : api.post(endpoint, payload)
-        request.then(() => { clearReminderForm(); fetchReminders(); })
+        request.then(() => { clearReminderForm(); fetchReminders(); fetchVignetteCheck(); })
             .catch(err => {
                 console.error(err)
                 setErrorMessage(err.message || 'Failed to save reminder.')
@@ -254,7 +264,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
             lastServiceAtDate: today
         }
         api.put(`/api/reminders/${reminder.id}?vehicleId=${id}`, payload)
-            .then(() => fetchReminders())
+            .then(() => { fetchReminders(); fetchVignetteCheck(); })
             .catch(err => {
                 console.error(err)
                 setErrorMessage(err.message || 'Failed to reset reminder.')
@@ -276,10 +286,30 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
         setErrorMessage('')
 
         api.delete(`/api/reminders/${reminderId}`)
-            .then(() => fetchReminders())
+            .then(() => { fetchReminders(); fetchVignetteCheck(); })
             .catch(err => {
                 console.error(err)
                 setErrorMessage(err.message || 'Failed to delete reminder.')
+            })
+    }
+
+    const handleAdoptBgTollVignette = () => {
+        setErrorMessage('')
+        const lastServiceAtDate = new Date(vignetteCheck.bgTollExpiryDate)
+        lastServiceAtDate.setFullYear(lastServiceAtDate.getFullYear() - 1)
+        const payload = {
+            title: 'Vignette renewal',
+            description: null,
+            lastServiceAtOdometer: null,
+            intervalOdometer: null,
+            intervalMonths: 12,
+            lastServiceAtDate: lastServiceAtDate.toISOString().split('T')[0]
+        }
+        api.post(`/api/reminders?vehicleId=${id}`, payload)
+            .then(() => { fetchReminders(); fetchVignetteCheck(); })
+            .catch(err => {
+                console.error(err)
+                setErrorMessage(err.message || 'Failed to save vignette reminder.')
             })
     }
 
@@ -318,6 +348,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                 setShowDetailsForm(false)
                 fetchGarage()
                 fetchReminders()
+                fetchVignetteCheck()
             })
             .catch(err => {
                 console.error(err)
@@ -372,6 +403,8 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
     const baseButtonStyle = { padding: '4px 8px', background: '#e1e1e1', border: '1px solid #777', cursor: 'pointer', fontSize: '12px', color: '#000', fontWeight: 'bold' };
     const tdStyle = { padding: '5px', border: '1px solid #aaa', fontSize: '12px', textAlign: 'left' };
     const thStyle = { padding: '5px', border: '1px solid #aaa', fontSize: '12px', textAlign: 'left', background: '#eaeaea', color: '#000' };
+
+    const hasVignetteReminder = reminders.some(r => r.title === 'Vignette renewal')
 
     return (
         <div style={{ padding: '10px', fontFamily: 'monospace', color: '#000', backgroundColor: '#fff' }}>
@@ -446,7 +479,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                             </form>
                         )}
 
-                        {reminders.length === 0 ? (
+                        {reminders.length === 0 && !(vignetteCheck?.bgTollFound && !hasVignetteReminder) ? (
                             <div style={{ color: '#555', fontSize: '11px' }}>No monitoring thresholds defined.</div>
                         ) : (
                             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -469,6 +502,19 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                             <td style={tdStyle}>
                                                 <span style={{ fontWeight: 'bold' }}>{rem.title}</span>
                                                 {rem.description && <div style={{ fontSize: '11px', color: '#555' }}>Note: {rem.description}</div>}
+                                                {rem.title === 'Vignette renewal' && vignetteCheck && (
+                                                    <div
+                                                        title={vignetteCheck.bgTollExpiryDate ? `BGTOLL expiry: ${formatDate(vignetteCheck.bgTollExpiryDate)}${vignetteCheck.bgTollStatus ? ` (${vignetteCheck.bgTollStatus})` : ''}` : vignetteCheck.message}
+                                                        style={{
+                                                            fontSize: '10px', fontWeight: 'bold', marginTop: '3px',
+                                                            color: !vignetteCheck.bgTollFound ? '#666' : (vignetteCheck.match ? '#006600' : '#a00')
+                                                        }}
+                                                    >
+                                                        {!vignetteCheck.bgTollFound ? `[BGTOLL: ${vignetteCheck.message}]`
+                                                            : vignetteCheck.match ? '[BGTOLL: ✓ CONFIRMED]'
+                                                                : '[BGTOLL: ⚠ DATE MISMATCH]'}
+                                                    </div>
+                                                )}
                                             </td>
                                             <td style={tdStyle}>
                                                 {rem.intervalOdometer && <div>Odo: Every {rem.intervalOdometer.toLocaleString()} km (Last: {rem.lastServiceAtOdometer?.toLocaleString()} km)</div>}
@@ -483,6 +529,21 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                         </tr>
                                     );
                                 })}
+                                {vignetteCheck?.bgTollFound && !hasVignetteReminder && (
+                                    <tr style={{ backgroundColor: '#fffbe6' }}>
+                                        <td style={{ ...tdStyle, color: '#997a00', fontWeight: 'bold' }}>DETECTED</td>
+                                        <td style={tdStyle}>
+                                            <span style={{ fontWeight: 'bold' }}>Vignette renewal</span>
+                                            <div style={{ fontSize: '10px', color: '#666', marginTop: '2px' }}>Found via BGTOLL, not saved yet.</div>
+                                        </td>
+                                        <td style={tdStyle}>
+                                            Time: Expires {formatDate(vignetteCheck.bgTollExpiryDate)}{vignetteCheck.bgTollStatus ? ` (${vignetteCheck.bgTollStatus})` : ''}
+                                        </td>
+                                        <td style={tdStyle}>
+                                            <button onClick={handleAdoptBgTollVignette} style={{ ...baseButtonStyle, padding: '2px 4px' }}>[ Save as Reminder ]</button>
+                                        </td>
+                                    </tr>
+                                )}
                                 </tbody>
                             </table>
                         )}
