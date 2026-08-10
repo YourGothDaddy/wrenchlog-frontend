@@ -21,10 +21,10 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
     } = useVehicleCatalog(setErrorMessage)
 
     const renderYearOptions = () => {
-        if (!selectedModification) return <option value="">Choose Modification First</option>
+        if (!selectedModification) return <option value="">Select a Modification First</option>
 
         if (!isProductionYearRangeValid()) {
-            return <option value="">No available production years</option>
+            return <option value="">No Production Years Available</option>
         }
 
         const start = selectedModification.startYear
@@ -95,7 +95,7 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
         <div style={{ padding: '10px', fontFamily: 'monospace', color: '#000', backgroundColor: '#fff' }}>
 
             <div style={{ border: '2px solid #000', padding: '8px', marginBottom: '15px', backgroundColor: '#f0f0f0' }}>
-                <div style={{ fontSize: '16px', fontWeight: 'bold' }}>WRENCHLOG - VIRTUAL GARAGE</div>
+                <div style={{ fontSize: '16px', fontWeight: 'bold' }}>WRENCHLOG - MY GARAGE</div>
                 <div style={{ fontSize: '11px', marginTop: '2px' }}>USER: {username}</div>
             </div>
 
@@ -133,7 +133,7 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
                                 disabled={!selectedModel && generations.length <= 1}
                                 required style={baseSelectStyle}>
                             {generations.length <= 1 ? (
-                                <option value={selectedGeneration}>No Generation Available</option>
+                                <option value={selectedGeneration}>No Generation Data</option>
                             ) : (
                                 <>
                                     <option value="">Select Generation</option>
@@ -178,7 +178,7 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
                         <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>Current Odometer Value (km)</div>
                         <input
                             type="number"
-                            placeholder="Input integer string"
+                            placeholder="e.g. 145000"
                             value={kilometers}
                             onChange={e => setKilometers(e.target.value)}
                             required
@@ -188,7 +188,7 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
 
                     <div style={{ gridColumn: 'span 2', marginTop: '4px' }}>
                         <button type="submit" style={{ ...baseButtonStyle, width: '100%', padding: '6px' }}>
-                            [ Commit Vehicle to Garage ]
+                            [ Add Vehicle ]
                         </button>
                     </div>
                 </form>
@@ -196,20 +196,20 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
 
             <div style={{ marginBottom: '10px' }}>
                 <div style={{ fontWeight: 'bold', fontSize: '13px', marginBottom: '2px' }}>Vehicles</div>
-                <div style={{ fontSize: '11px', color: '#555', marginBottom: '8px' }}>Select row to access detailed vehicle information</div>
+                <div style={{ fontSize: '11px', color: '#555', marginBottom: '8px' }}>Click a vehicle to view details</div>
 
                 {loading ? (
-                    <div style={{ border: '1px solid #aaa', padding: '8px', fontSize: '12px' }}>Querying active system registers...</div>
+                    <div style={{ border: '1px solid #aaa', padding: '8px', fontSize: '12px' }}>Loading your vehicles...</div>
                 ) : vehicles.length === 0 ? (
                     <div style={{ border: '1px dashed #777', padding: '12px', fontSize: '12px', color: '#555' }}>
-                        Datastore contains zero records. Input metadata above to register local assets.
+                        No vehicles yet. Add one above to get started.
                     </div>
                 ) : (
                     <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #000' }}>
                         <thead>
                         <tr>
                             <th style={{ ...thStyle, width: '15%' }}>Make</th>
-                            <th style={thStyle}>Model, Specifications & Year</th>
+                            <th style={thStyle}>Model & Year</th>
                             <th style={{ ...thStyle, width: '20%' }}>Odometer</th>
                             <th style={{ ...thStyle, width: '15%', textAlign: 'center' }}>Actions</th>
                         </tr>
@@ -233,7 +233,7 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
                                         onClick={(e) => handleDeleteVehicle(vehicle.id, e)}
                                         style={{ ...baseButtonStyle, color: '#a00', padding: '2px 6px' }}
                                     >
-                                        [ Purge ]
+                                        [ Delete ]
                                     </button>
                                 </td>
                             </tr>
