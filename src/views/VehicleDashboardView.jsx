@@ -691,7 +691,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                     )}
 
                     <div style={{ marginBottom: '15px' }}>
-                        <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>[ Cancel ]</div>
+                        <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>Service History</div>
                         {serviceLogs.length === 0 ? (
                             <div style={{ border: '1px solid #aaa', padding: '8px', color: '#666' }}>No service history yet.</div>
                         ) : (
