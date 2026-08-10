@@ -73,7 +73,7 @@ const LoginForm = ({onLoginSuccess}) => {
                 </div>
 
                 <button type="submit" className="form-button">
-                    [ Sign In ]
+                    Sign In
                 </button>
             </form>
         </div>

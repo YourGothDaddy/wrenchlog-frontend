@@ -188,7 +188,7 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
 
                     <div style={{ gridColumn: 'span 2', marginTop: '4px' }}>
                         <button type="submit" style={{ ...baseButtonStyle, width: '100%', padding: '6px' }}>
-                            [ Add Vehicle ]
+                            Add Vehicle
                         </button>
                     </div>
                 </form>
@@ -233,7 +233,7 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
                                         onClick={(e) => handleDeleteVehicle(vehicle.id, e)}
                                         style={{ ...baseButtonStyle, color: '#a00', padding: '2px 6px' }}
                                     >
-                                        [ Delete ]
+                                        Delete
                                     </button>
                                 </td>
                             </tr>

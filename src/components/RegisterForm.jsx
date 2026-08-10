@@ -90,7 +90,7 @@ const RegisterForm = () => {
                 </div>
 
                 <button type="submit" className="form-button">
-                    [ Register ]
+                    Register
                 </button>
             </form>
         </div>

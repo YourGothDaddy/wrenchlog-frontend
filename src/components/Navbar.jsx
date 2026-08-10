@@ -39,7 +39,7 @@ const Navbar = ({ currentUser, onLogout }) => {
             <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
                 {currentUser ? (
                     <>
-                        <Link to="/" style={linkStyle}>[ Garage ]</Link>
+                        <Link to="/" style={linkStyle}>Garage</Link>
 
                         <span style={{ fontSize: '11px', color: '#555' }}>
                             USER: {currentUser.username}
@@ -49,13 +49,13 @@ const Navbar = ({ currentUser, onLogout }) => {
                             onClick={onLogout}
                             style={{ ...buttonStyle, color: '#a00' }}
                         >
-                            [ Logout ]
+                            Logout
                         </button>
                     </>
                 ) : (
                     <>
-                        <Link to="/login" style={linkStyle}>[ Login ]</Link>
-                        <Link to="/register" style={linkStyle}>[ Register ]</Link>
+                        <Link to="/login" style={linkStyle}>Login</Link>
+                        <Link to="/register" style={linkStyle}>Register</Link>
                     </>
                 )}
             </div>

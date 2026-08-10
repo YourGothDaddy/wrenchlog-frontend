@@ -54,6 +54,9 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
 
     const [vignetteCheck, setVignetteCheck] = useState(null)
 
+    const [editingOdometer, setEditingOdometer] = useState(false)
+    const [odometerValue, setOdometerValue] = useState('')
+
     const [errorMessage, setErrorMessage] = useState('')
 
     const fetchServiceLogs = () => {
@@ -356,6 +359,20 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
             })
     }
 
+    const handleUpdateOdometer = (e) => {
+        e.preventDefault()
+        setErrorMessage('')
+        api.put(`/api/vehicles/${id}/odometer`, { kilometers: parseInt(odometerValue) })
+            .then(() => {
+                setEditingOdometer(false)
+                fetchGarage()
+            })
+            .catch(err => {
+                console.error(err)
+                setErrorMessage(err.message || 'Failed to update odometer.')
+            })
+    }
+
     const clearReminderForm = () => {
         setReminderTitle(''); setReminderDesc(''); setLastServiceOdo('');
         setIntervalOdo(''); setIntervalMonths(''); setLastServiceDate('');
@@ -400,7 +417,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
     if (!vehicle) return <div style={{ padding: '10px', fontFamily: 'monospace' }}><p>Vehicle not found.</p><button onClick={() => navigate('/')}>Back</button></div>
 
     const baseInputStyle = { padding: '4px', border: '1px solid #777', background: '#fff', fontSize: '12px', fontFamily: 'monospace' };
-    const baseButtonStyle = { padding: '4px 8px', background: '#e1e1e1', border: '1px solid #777', cursor: 'pointer', fontSize: '12px', color: '#000', fontWeight: 'bold' };
+    const baseButtonStyle = { padding: '4px 12px', background: '#e1e1e1', border: '1px solid #777', cursor: 'pointer', fontSize: '12px', color: '#000', fontWeight: 'bold', fontFamily: 'monospace' };
     const tdStyle = { padding: '5px', border: '1px solid #aaa', fontSize: '12px', textAlign: 'left' };
     const thStyle = { padding: '5px', border: '1px solid #aaa', fontSize: '12px', textAlign: 'left', background: '#eaeaea', color: '#000' };
 
@@ -410,7 +427,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
         <div style={{ padding: '10px', fontFamily: 'monospace', color: '#000', backgroundColor: '#fff' }}>
 
             <div style={{ marginBottom: '10px' }}>
-                <button onClick={() => navigate('/')} style={baseButtonStyle}>[ Back to Garage ]</button>
+                <button onClick={() => navigate('/')} style={baseButtonStyle}>Back to Garage</button>
             </div>
 
             {errorMessage && (
@@ -425,10 +442,35 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                     <td style={{ ...tdStyle, background: '#f0f0f0', fontWeight: 'bold', width: '15%' }}>VEHICLE:</td>
                     <td style={{ ...tdStyle, fontWeight: 'bold' }}>{vehicle.year} {vehicle.make} {vehicle.model}</td>
                     <td style={{ ...tdStyle, background: '#f0f0f0', fontWeight: 'bold', width: '20%' }}>CURRENT ODOMETER:</td>
-                    <td style={{ ...tdStyle, fontWeight: 'bold', width: '20%' }}>{vehicle.kilometers.toLocaleString()} km</td>
+                    <td style={{ ...tdStyle, fontWeight: 'bold', width: '20%' }}>
+                        {vehicle.kilometers.toLocaleString()} km
+                        <button
+                            onClick={() => { setOdometerValue(vehicle.kilometers); setEditingOdometer(true) }}
+                            style={{ ...baseButtonStyle, marginLeft: '8px', padding: '1px 4px' }}
+                        >
+                            Edit
+                        </button>
+                    </td>
                 </tr>
                 </tbody>
             </table>
+
+            {editingOdometer && (
+                <div style={{ border: '1px solid #000', padding: '10px', marginBottom: '15px', backgroundColor: '#fafafa' }}>
+                    <div style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '13px' }}>Edit Odometer</div>
+                    <form onSubmit={handleUpdateOdometer} style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
+                        <input
+                            type="number"
+                            value={odometerValue}
+                            onChange={e => setOdometerValue(e.target.value)}
+                            required
+                            style={{ ...baseInputStyle, width: '140px' }}
+                        />
+                        <button type="submit" style={{ ...baseButtonStyle, whiteSpace: 'nowrap' }}>Save</button>
+                        <button type="button" onClick={() => setEditingOdometer(false)} style={{ ...baseButtonStyle, whiteSpace: 'nowrap' }}>Cancel</button>
+                    </form>
+                </div>
+            )}
 
             <div style={{ display: 'flex', borderBottom: '2px solid #000', marginBottom: '15px' }}>
                 <button
@@ -459,7 +501,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #000', paddingBottom: '4px', marginBottom: '10px' }}>
                             <span style={{ fontWeight: 'bold', fontSize: '13px' }}>Maintenance Reminders</span>
                             <button onClick={() => setShowReminderForm(!showReminderForm)} style={baseButtonStyle}>
-                                {showReminderForm ? "[ Hide Form ]" : "[ Add Reminder ]"}
+                                {showReminderForm ? "Hide Form" : "Add Reminder"}
                             </button>
                         </div>
 
@@ -474,8 +516,8 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                     <input type="date" value={lastServiceDate} onChange={e => setLastServiceDate(e.target.value)} style={baseInputStyle} />
                                     <input type="number" placeholder="Repeat Every (Months)" value={intervalMonths} onChange={e => setIntervalMonths(e.target.value)} style={baseInputStyle} />
                                 </div>
-                                <button type="submit" style={baseButtonStyle}>[ Save Ruleset ]</button>
-                                <button type="button" onClick={clearReminderForm} style={{ ...baseButtonStyle, marginLeft: '5px' }}>[ Cancel ]</button>
+                                <button type="submit" style={baseButtonStyle}>Save Ruleset</button>
+                                <button type="button" onClick={clearReminderForm} style={{ ...baseButtonStyle, marginLeft: '5px' }}>Cancel</button>
                             </form>
                         )}
 
@@ -522,9 +564,9 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                                 <div style={{ fontWeight: 'bold', marginTop: '4px', fontSize: '11px' }}>{getDueSummary(rem)}</div>
                                             </td>
                                             <td style={tdStyle}>
-                                                <button onClick={() => handleResetReminder(rem)} style={{ ...baseButtonStyle, background: isDue ? '#ffcccc' : '#ccffcc', padding: '2px 4px' }}>[ Mark Done ]</button>
-                                                <button onClick={() => handleEditReminderSetup(rem)} style={{ ...baseButtonStyle, marginLeft: '4px', padding: '2px 4px' }}>[ Edit ]</button>
-                                                <button onClick={() => handleDeleteReminder(rem.id)} style={{ ...baseButtonStyle, marginLeft: '4px', padding: '2px 4px', color: '#a00' }}>[ Delete ]</button>
+                                                <button onClick={() => handleResetReminder(rem)} style={{ ...baseButtonStyle, background: isDue ? '#ffcccc' : '#ccffcc', padding: '2px 4px' }}>Mark Done</button>
+                                                <button onClick={() => handleEditReminderSetup(rem)} style={{ ...baseButtonStyle, marginLeft: '4px', padding: '2px 4px' }}>Edit</button>
+                                                <button onClick={() => handleDeleteReminder(rem.id)} style={{ ...baseButtonStyle, marginLeft: '4px', padding: '2px 4px', color: '#a00' }}>Delete</button>
                                             </td>
                                         </tr>
                                     );
@@ -540,7 +582,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                             Time: Expires {formatDate(vignetteCheck.bgTollExpiryDate)}{vignetteCheck.bgTollStatus ? ` (${vignetteCheck.bgTollStatus})` : ''}
                                         </td>
                                         <td style={tdStyle}>
-                                            <button onClick={handleAdoptBgTollVignette} style={{ ...baseButtonStyle, padding: '2px 4px' }}>[ Save as Reminder ]</button>
+                                            <button onClick={handleAdoptBgTollVignette} style={{ ...baseButtonStyle, padding: '2px 4px' }}>Save as Reminder</button>
                                         </td>
                                     </tr>
                                 )}
@@ -553,7 +595,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #000', paddingBottom: '4px', marginBottom: '8px' }}>
                             <span style={{ fontWeight: 'bold', fontSize: '13px' }}>VEHICLE SPECIFICATIONS</span>
                             <button onClick={showDetailsForm ? () => setShowDetailsForm(false) : openDetailsForm} style={baseButtonStyle}>
-                                {showDetailsForm ? "[ Cancel ]" : "[ Edit Details ]"}
+                                {showDetailsForm ? "Cancel" : "Edit Details"}
                             </button>
                         </div>
 
@@ -635,7 +677,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                 </div>
 
                                 <div style={{ gridColumn: 'span 3', marginTop: '4px' }}>
-                                    <button type="submit" style={{ ...baseButtonStyle, width: '100%', padding: '6px' }}>[ Save Specifications ]</button>
+                                    <button type="submit" style={{ ...baseButtonStyle, width: '100%', padding: '6px' }}>Save Specifications</button>
                                 </div>
                             </form>
                         )}
@@ -649,7 +691,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                 <input type="number" step="0.01" placeholder="Cost (€)" value={cost} onChange={e => setCost(e.target.value)} required style={baseInputStyle} />
                                 <input type="number" placeholder="Odometer (km)" value={kilometersAtService} onChange={e => setKilometersAtService(e.target.value)} required style={baseInputStyle} />
                                 <input type="date" value={serviceDate} onChange={e => setServiceDate(e.target.value)} required style={baseInputStyle} />
-                                <button type="submit" style={baseButtonStyle}>[ Add Entry ]</button>
+                                <button type="submit" style={baseButtonStyle}>Add Entry</button>
                             </form>
                         </div>
 
@@ -683,8 +725,8 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                 <input type="number" value={modalKilometersAtService} onChange={e => setModalKilometersAtService(e.target.value)} required style={baseInputStyle} />
                                 <input type="date" value={modalServiceDate} onChange={e => setModalServiceDate(e.target.value)} required style={baseInputStyle} />
                                 <div>
-                                    <button type="submit" style={{ ...baseButtonStyle, background: '#fd7e14', color: '#fff' }}>[ Save Changes ]</button>
-                                    <button type="button" onClick={() => setModifyModal(false)} style={{ ...baseButtonStyle, marginLeft: '5px' }}>[ Cancel ]</button>
+                                    <button type="submit" style={{ ...baseButtonStyle, background: '#fd7e14', color: '#fff' }}>Save Changes</button>
+                                    <button type="button" onClick={() => setModifyModal(false)} style={{ ...baseButtonStyle, marginLeft: '5px' }}>Cancel</button>
                                 </div>
                             </form>
                         </div>
@@ -713,8 +755,8 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                         <td style={tdStyle}>{log.kilometersAtService.toLocaleString()} km</td>
                                         <td style={tdStyle}>€{log.cost.toFixed(2)}</td>
                                         <td style={tdStyle}>
-                                            <button onClick={() => handleModifyServiceLogModal(log)} style={{ ...baseButtonStyle, padding: '1px 4px' }}>[ Edit ]</button>
-                                            <button onClick={() => handleDeleteServiceLog(log.id)} style={{ ...baseButtonStyle, marginLeft: '4px', padding: '1px 4px', color: '#a00' }}>[ Delete ]</button>
+                                            <button onClick={() => handleModifyServiceLogModal(log)} style={{ ...baseButtonStyle, padding: '1px 4px' }}>Edit</button>
+                                            <button onClick={() => handleDeleteServiceLog(log.id)} style={{ ...baseButtonStyle, marginLeft: '4px', padding: '1px 4px', color: '#a00' }}>Delete</button>
                                         </td>
                                     </tr>
                                 ))}
@@ -737,7 +779,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                         </td>
                                         <td style={{ ...tdStyle, width: '15%', color: '#666' }}>{file.fileType}</td>
                                         <td style={{ ...tdStyle, width: '15%', textAlign: 'center' }}>
-                                            <button onClick={() => handleDeleteFile(file.id)} style={{ ...baseButtonStyle, padding: '1px 4px', color: '#a00' }}>[ Delete ]</button>
+                                            <button onClick={() => handleDeleteFile(file.id)} style={{ ...baseButtonStyle, padding: '1px 4px', color: '#a00' }}>Delete</button>
                                         </td>
                                     </tr>
                                 ))}
@@ -756,8 +798,8 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                             <input type="text" placeholder="Note Title" value={noteTitle} onChange={e => setNoteTitle(e.target.value)} required style={baseInputStyle} />
                             <textarea placeholder="Write your note here..." value={noteContent} onChange={e => setNoteContent(e.target.value)} required rows="4" style={{ ...baseInputStyle, resize: 'vertical' }} />
                             <div>
-                                <button type="submit" style={baseButtonStyle}>[ Save Note ]</button>
-                                {editingNoteId && <button type="button" onClick={() => { setNoteTitle(''); setNoteContent(''); setEditingNoteId(null); }} style={{ ...baseButtonStyle, marginLeft: '5px' }}>[ Cancel ]</button>}
+                                <button type="submit" style={baseButtonStyle}>Save Note</button>
+                                {editingNoteId && <button type="button" onClick={() => { setNoteTitle(''); setNoteContent(''); setEditingNoteId(null); }} style={{ ...baseButtonStyle, marginLeft: '5px' }}>Cancel</button>}
                             </div>
                         </form>
                     </div>
@@ -772,8 +814,8 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                     <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed #aaa', paddingBottom: '2px', marginBottom: '4px' }}>
                                         <span style={{ fontWeight: 'bold' }}>{note.title}</span>
                                         <div>
-                                            <button onClick={() => handleEditNoteSetup(note)} style={{ ...baseButtonStyle, padding: '1px 4px' }}>[ Edit ]</button>
-                                            <button onClick={() => handleDeleteNote(note.id)} style={{ ...baseButtonStyle, marginLeft: '4px', padding: '1px 4px', color: '#a00' }}>[ Delete ]</button>
+                                            <button onClick={() => handleEditNoteSetup(note)} style={{ ...baseButtonStyle, padding: '1px 4px' }}>Edit</button>
+                                            <button onClick={() => handleDeleteNote(note.id)} style={{ ...baseButtonStyle, marginLeft: '4px', padding: '1px 4px', color: '#a00' }}>Delete</button>
                                         </div>
                                     </div>
                                     <pre style={{ margin: 0, whiteSpace: 'pre-wrap', fontSize: '11px', background: '#fcfcfc', padding: '4px', border: '1px solid #eee' }}>{note.content}</pre>
