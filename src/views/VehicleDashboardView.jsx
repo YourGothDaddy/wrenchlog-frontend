@@ -2,6 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from "react"
 import api, { BASE_URL } from '../utils/api'
 import { formatDate } from '../utils/dateFormat'
+import ElectricalTab from './ElectricalTab'
 
 function VehicleDashboardView({ vehicles, fetchGarage  }) {
     const { id } = useParams()
@@ -493,6 +494,16 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                 >
                     Notes
                 </button>
+                <button
+                    onClick={() => setActiveTab('electrical')}
+                    style={{
+                        padding: '6px 12px', cursor: 'pointer', fontSize: '12px', fontFamily: 'monospace', fontWeight: 'bold',
+                        border: '1px solid #000', borderBottom: activeTab === 'electrical' ? '2px solid #fff' : '1px solid #000',
+                        backgroundColor: activeTab === 'electrical' ? '#fff' : '#e1e1e1', marginBottom: '-2px'
+                    }}
+                >
+                    Electrical
+                </button>
             </div>
 
             {activeTab === 'history' ? (
@@ -788,7 +799,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                         )}
                     </div>
                 </div>
-            ) : (
+            ) : activeTab === 'notes' ? (
                 <div>
                     <div style={{ border: '1px solid #000', padding: '10px', backgroundColor: '#fafafa', marginBottom: '15px' }}>
                         <div style={{ fontWeight: 'bold', borderBottom: '1px solid #000', paddingBottom: '3px', marginBottom: '8px' }}>
@@ -824,6 +835,8 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                         </div>
                     )}
                 </div>
+            ) : (
+                <ElectricalTab vehicleId={id} setErrorMessage={setErrorMessage} />
             )}
         </div>
     )
