@@ -30,6 +30,10 @@ function ElectricalTab({ vehicleId, setErrorMessage }) {
     const [editValue, setEditValue] = useState('')
     const [editUnit, setEditUnit] = useState('')
 
+    const [editingComponentId, setEditingComponentId] = useState(null)
+    const [editComponentName, setEditComponentName] = useState('')
+    const [editComponentDescription, setEditComponentDescription] = useState('')
+
     const fetchComponents = () => {
         api.get(`/api/vehicles/${vehicleId}/electrical/components`)
             .then(data => setComponents(data))
@@ -87,6 +91,27 @@ function ElectricalTab({ vehicleId, setErrorMessage }) {
             .catch(err => {
                 console.error(err)
                 setErrorMessage(err.message || 'Failed to delete component.')
+            })
+    }
+
+    const openComponentEditor = (component) => {
+        setEditingComponentId(component.id)
+        setEditComponentName(component.name)
+        setEditComponentDescription(component.description || '')
+    }
+
+    const handleUpdateComponent = (e) => {
+        e.preventDefault()
+        setErrorMessage('')
+        api.put(`/api/vehicles/${vehicleId}/electrical/components/${editingComponentId}`,
+            { name: editComponentName, description: editComponentDescription })
+            .then(() => {
+                setEditingComponentId(null)
+                fetchComponents()
+            })
+            .catch(err => {
+                console.error(err)
+                setErrorMessage(err.message || 'Failed to update component.')
             })
     }
 
@@ -202,15 +227,41 @@ function ElectricalTab({ vehicleId, setErrorMessage }) {
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                             {components.map(c => (
-                                <div key={c.id} style={{ border: '1px solid #000', padding: '8px', backgroundColor: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <div>
-                                        <div style={{ fontWeight: 'bold' }}>{c.name}</div>
-                                        {c.description && <div style={{ fontSize: '11px', color: '#555' }}>{c.description}</div>}
-                                    </div>
-                                    <div>
-                                        <button onClick={() => setSelectedComponentId(c.id)} style={smallButtonStyle}>Open</button>
-                                        <button onClick={() => handleDeleteComponent(c.id)} style={{ ...smallButtonStyle, marginLeft: '4px', color: '#a00' }}>Delete</button>
-                                    </div>
+                                <div key={c.id} style={{ border: '1px solid #000', padding: '8px', backgroundColor: '#fff' }}>
+                                    {editingComponentId === c.id ? (
+                                        <form onSubmit={handleUpdateComponent} style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'flex-start' }}>
+                                            <input
+                                                value={editComponentName}
+                                                onChange={e => setEditComponentName(e.target.value)}
+                                                required
+                                                style={{ ...baseInputStyle, flex: '1 1 200px' }}
+                                            />
+                                            <input
+                                                value={editComponentDescription}
+                                                onChange={e => setEditComponentDescription(e.target.value)}
+                                                placeholder="Description (optional)"
+                                                style={{ ...baseInputStyle, flex: '1 1 200px' }}
+                                            />
+                                            <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+                                                <button type="submit" style={{ ...smallButtonStyle, whiteSpace: 'nowrap' }}>Save</button>
+                                                <button type="button" onClick={() => setEditingComponentId(null)} style={{ ...smallButtonStyle, whiteSpace: 'nowrap' }}>Cancel</button>
+                                            </div>
+                                        </form>
+                                    ) : (
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
+                                            <div style={{ minWidth: 0, flex: 1 }}>
+                                                <div style={{ fontWeight: 'bold', wordBreak: 'break-word' }}>{c.name}</div>
+                                                {c.description && (
+                                                    <div style={{ fontSize: '11px', color: '#555', wordBreak: 'break-word' }}>{c.description}</div>
+                                                )}
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '4px', flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                                                <button onClick={() => setSelectedComponentId(c.id)} style={smallButtonStyle}>Open</button>
+                                                <button onClick={() => openComponentEditor(c)} style={smallButtonStyle}>Edit</button>
+                                                <button onClick={() => handleDeleteComponent(c.id)} style={{ ...smallButtonStyle, color: '#a00' }}>Delete</button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>
