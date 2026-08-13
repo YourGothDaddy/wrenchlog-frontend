@@ -88,3 +88,54 @@ body {
     border: 2px solid #000;
     background-color: #fafafa;
 }
+
+.action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+}
+
+.responsive-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 8px;
+}
+
+.table-scroll-wrapper {
+    overflow-x: auto;
+    border: 1px solid #000;
+}
+
+.table-scroll-wrapper table {
+    border: none;
+}
+
+@media (max-width: 600px) {
+    .vehicle-info-table td {
+        display: block;
+        width: 100% !important;
+    }
+
+    .vehicle-info-table tr {
+        display: block;
+        margin-bottom: 4px;
+    }
+
+    .tab-row {
+        flex-wrap: wrap;
+    }
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    overflow-x: hidden;
+}
+
+input[type="file"] {
+    max-width: 100%;
+    width: 100%;
+}

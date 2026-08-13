@@ -11,7 +11,7 @@ const Navbar = ({ currentUser, onLogout }) => {
     };
 
     const buttonStyle = {
-        padding: '4px 8px',
+        padding: '4px 12px',
         background: '#e1e1e1',
         border: '1px solid #777',
         cursor: 'pointer',
@@ -24,8 +24,10 @@ const Navbar = ({ currentUser, onLogout }) => {
     return (
         <nav style={{
             display: 'flex',
+            flexWrap: 'wrap',
             justifyContent: 'space-between',
             alignItems: 'center',
+            gap: '8px',
             padding: '10px 15px',
             border: '2px solid #000',
             borderTop: 'none',
@@ -36,7 +38,7 @@ const Navbar = ({ currentUser, onLogout }) => {
                 WRENCHLOG
             </Link>
 
-            <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
                 {currentUser ? (
                     <>
                         <Link to="/" style={linkStyle}>Garage</Link>

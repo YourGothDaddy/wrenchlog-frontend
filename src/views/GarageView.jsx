@@ -21,7 +21,7 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
     } = useVehicleCatalog(setErrorMessage)
 
     const renderYearOptions = () => {
-        if (!selectedModification) return <option value="">Select a Modification First</option>
+        if (!selectedModification) return <option value="">Choose Modification First</option>
 
         if (!isProductionYearRangeValid()) {
             return <option value="">No Production Years Available</option>
@@ -85,9 +85,9 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
             })
     }
 
-    const baseSelectStyle = { padding: '4px', border: '1px solid #777', background: '#fff', fontSize: '12px', fontFamily: 'monospace', width: '100%', boxSizing: 'border-box' };
-    const baseInputStyle = { padding: '4px', border: '1px solid #777', background: '#fff', fontSize: '12px', fontFamily: 'monospace', width: '100%', boxSizing: 'border-box' };
-    const baseButtonStyle = { padding: '4px 8px', background: '#e1e1e1', border: '1px solid #777', cursor: 'pointer', fontSize: '12px', color: '#000', fontWeight: 'bold', fontFamily: 'monospace' };
+    const baseSelectStyle = { padding: '4px', border: '1px solid #777', background: '#fff', fontSize: '12px', fontFamily: 'monospace', width: '100%' };
+    const baseInputStyle = { padding: '4px', border: '1px solid #777', background: '#fff', fontSize: '12px', fontFamily: 'monospace', width: '100%' };
+    const baseButtonStyle = { padding: '4px 12px', background: '#e1e1e1', border: '1px solid #777', cursor: 'pointer', fontSize: '12px', color: '#000', fontWeight: 'bold', fontFamily: 'monospace' };
     const tdStyle = { padding: '6px', border: '1px solid #aaa', fontSize: '12px', textAlign: 'left', verticalAlign: 'middle' };
     const thStyle = { padding: '6px', border: '1px solid #aaa', fontSize: '12px', textAlign: 'left', background: '#eaeaea', color: '#000', fontWeight: 'bold' };
 
@@ -95,7 +95,7 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
         <div style={{ padding: '10px', fontFamily: 'monospace', color: '#000', backgroundColor: '#fff' }}>
 
             <div style={{ border: '2px solid #000', padding: '8px', marginBottom: '15px', backgroundColor: '#f0f0f0' }}>
-                <div style={{ fontSize: '16px', fontWeight: 'bold' }}>WRENCHLOG - MY GARAGE</div>
+                <div style={{ fontSize: '16px', fontWeight: 'bold' }}>WRENCHLOG — MY GARAGE</div>
                 <div style={{ fontSize: '11px', marginTop: '2px' }}>USER: {username}</div>
             </div>
 
@@ -108,7 +108,7 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
             <div style={{ border: '1px solid #000', padding: '10px', backgroundColor: '#fafafa', marginBottom: '20px' }}>
                 <div style={{ fontWeight: 'bold', borderBottom: '1px solid #000', paddingBottom: '3px', marginBottom: '10px', fontSize: '13px' }}>Add New Vehicle</div>
 
-                <form onSubmit={handleAddVehicle} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <form onSubmit={handleAddVehicle} className="responsive-grid">
 
                     <div>
                         <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>Make</div>
@@ -175,7 +175,7 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
                     </div>
 
                     <div>
-                        <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>Current Odometer Value (km)</div>
+                        <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>Current Odometer (km)</div>
                         <input
                             type="number"
                             placeholder="e.g. 145000"
@@ -186,7 +186,7 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
                         />
                     </div>
 
-                    <div style={{ gridColumn: 'span 2', marginTop: '4px' }}>
+                    <div style={{ gridColumn: '1 / -1', marginTop: '4px' }}>
                         <button type="submit" style={{ ...baseButtonStyle, width: '100%', padding: '6px' }}>
                             Add Vehicle
                         </button>
@@ -205,41 +205,45 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
                         No vehicles yet. Add one above to get started.
                     </div>
                 ) : (
-                    <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #000' }}>
-                        <thead>
-                        <tr>
-                            <th style={{ ...thStyle, width: '15%' }}>Make</th>
-                            <th style={thStyle}>Model & Year</th>
-                            <th style={{ ...thStyle, width: '20%' }}>Odometer</th>
-                            <th style={{ ...thStyle, width: '15%', textAlign: 'center' }}>Actions</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {vehicles.map(vehicle => (
-                            <tr
-                                key={vehicle.id}
-                                onClick={() => navigate(`/vehicle/${vehicle.id}`)}
-                                style={{ cursor: 'pointer', backgroundColor: '#fff' }}
-                                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f5f5f5' }}
-                                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#fff' }}
-                            >
-                                <td style={tdStyle}>{vehicle.make}</td>
-                                <td style={{ ...tdStyle, color: '#0056b3', textDecoration: 'underline', fontWeight: 'bold' }}>
-                                    {vehicle.model} {vehicle.year}
-                                </td>
-                                <td style={tdStyle}>{vehicle.kilometers.toLocaleString()} km</td>
-                                <td style={{ ...tdStyle, textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
-                                    <button
-                                        onClick={(e) => handleDeleteVehicle(vehicle.id, e)}
-                                        style={{ ...baseButtonStyle, color: '#a00', padding: '2px 6px' }}
-                                    >
-                                        Delete
-                                    </button>
-                                </td>
+                    <div className="table-scroll-wrapper">
+                        <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #000' }}>
+                            <thead>
+                            <tr>
+                                <th style={{ ...thStyle, width: '15%' }}>Make</th>
+                                <th style={thStyle}>Model & Year</th>
+                                <th style={{ ...thStyle, width: '20%' }}>Odometer</th>
+                                <th style={{ ...thStyle, width: '15%', textAlign: 'center' }}>Actions</th>
                             </tr>
-                        ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                            {vehicles.map(vehicle => (
+                                <tr
+                                    key={vehicle.id}
+                                    onClick={() => navigate(`/vehicle/${vehicle.id}`)}
+                                    style={{ cursor: 'pointer', backgroundColor: '#fff' }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f5f5f5' }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#fff' }}
+                                >
+                                    <td style={tdStyle}>{vehicle.make}</td>
+                                    <td style={{ ...tdStyle, color: '#0056b3', textDecoration: 'underline', fontWeight: 'bold' }}>
+                                        {vehicle.model} {vehicle.year}
+                                    </td>
+                                    <td style={tdStyle}>{vehicle.kilometers.toLocaleString()} km</td>
+                                    <td style={{ ...tdStyle, textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+                                        <div className="action-buttons" style={{ justifyContent: 'center' }}>
+                                            <button
+                                                onClick={(e) => handleDeleteVehicle(vehicle.id, e)}
+                                                style={{ ...baseButtonStyle, color: '#a00', padding: '2px 6px' }}
+                                            >
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
             </div>
         </div>
