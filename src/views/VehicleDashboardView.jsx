@@ -633,6 +633,17 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                                 <td style={tdStyle}>
                                                     <span style={{ fontWeight: 'bold' }}>{rem.title}</span>
                                                     {rem.description && <div style={{ fontSize: '11px', color: '#555' }}>Note: {rem.description}</div>}
+                                                    {rem.title === 'Vignette renewal' && vignetteCheck?.hasLocalReminder && (
+                                                        vignetteCheck.bgTollFound ? (
+                                                            <div style={{ fontSize: '10px', marginTop: '2px', fontWeight: 'bold', color: vignetteCheck.match ? '#006600' : '#cc0000' }}>
+                                                                {vignetteCheck.match ? '✓ Confirmed by BGTOLL' : '✗ BGTOLL date mismatch'}
+                                                            </div>
+                                                        ) : (
+                                                            <div style={{ fontSize: '10px', marginTop: '2px', color: '#997a00' }}>
+                                                                ? {vignetteCheck.message}
+                                                            </div>
+                                                        )
+                                                    )}
                                                 </td>
                                                 <td style={tdStyle}>
                                                     {rem.intervalOdometer && <div>Odo: Every {rem.intervalOdometer.toLocaleString()} km (Last: {rem.lastServiceAtOdometer?.toLocaleString()} km)</div>}
