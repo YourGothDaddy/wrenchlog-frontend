@@ -53,6 +53,11 @@ const api = {
         method: 'PUT',
         body: data instanceof FormData ? data : JSON.stringify(data)
     }),
+    patch: (endpoint, data, options) => request(endpoint, {
+        ...options,
+        method: 'PATCH',
+        body: data instanceof FormData ? data : JSON.stringify(data)
+    }),
     delete: (endpoint, options) => request(endpoint, { ...options, method: 'DELETE' }),
 };
 

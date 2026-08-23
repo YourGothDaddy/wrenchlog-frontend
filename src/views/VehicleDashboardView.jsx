@@ -29,6 +29,9 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
     const [modalServiceDate, setModalServiceDate] = useState('')
 
     const [files, setFiles] = useState([])
+    const [folders, setFolders] = useState([])
+    const [currentFolderId, setCurrentFolderId] = useState(null)
+    const [newFolderName, setNewFolderName] = useState('')
 
     const [notes, setNotes] = useState([])
     const [noteTitle, setNoteTitle] = useState('')
@@ -71,12 +74,22 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
             })
     }
 
-    const fetchFiles = () => {
-        api.get(`/api/vehicles/${id}/files`)
+    const fetchFiles = (folderId = currentFolderId) => {
+        const query = folderId != null ? `?folderId=${folderId}` : ''
+        api.get(`/api/vehicles/${id}/files${query}`)
             .then(data => setFiles(data))
             .catch(err => {
                 console.error(err)
                 setErrorMessage(err.message || 'Failed to load files.')
+            })
+    }
+
+    const fetchFolders = () => {
+        api.get(`/api/vehicles/${id}/folders`)
+            .then(data => setFolders(data))
+            .catch(err => {
+                console.error(err)
+                setErrorMessage(err.message || 'Failed to load folders.')
             })
     }
 
@@ -117,27 +130,89 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
     };
 
     const handleDeleteFile = (fileId) => {
-        if (!window.confirm("Delete this file? This cannot be undone.")) {
-            return;
-        }
-
+        if (!window.confirm('Delete this file? This cannot be undone.')) return
         setErrorMessage('')
-
         api.delete(`/api/vehicles/${id}/files/${fileId}`)
-            .then(() => fetchFiles())
+            .then(() => { fetchFiles(); fetchFolders() })
             .catch(err => {
                 console.error(err)
                 setErrorMessage(err.message || 'Failed to delete file.')
             })
     }
 
+    const handleMoveFile = (fileId, targetFolderId) => {
+        setErrorMessage('')
+        api.patch(`/api/vehicles/${id}/files/${fileId}/folder`, { folderId: targetFolderId })
+            .then(() => { fetchFiles(); fetchFolders() })
+            .catch(err => {
+                console.error(err)
+                setErrorMessage(err.message || 'Failed to move file.')
+            })
+    }
+
+    const handleCreateFolder = (e) => {
+        e.preventDefault()
+        if (!newFolderName.trim()) return
+        setErrorMessage('')
+        api.post(`/api/vehicles/${id}/folders`, { name: newFolderName.trim() })
+            .then(() => { setNewFolderName(''); fetchFolders() })
+            .catch(err => {
+                console.error(err)
+                setErrorMessage(err.message || 'Failed to create folder.')
+            })
+    }
+
+    const handleRenameFolder = (folder) => {
+        const newName = window.prompt('Rename folder:', folder.name)
+        if (!newName || !newName.trim() || newName.trim() === folder.name) return
+
+        setErrorMessage('')
+        api.put(`/api/vehicles/${id}/folders/${folder.id}`, { name: newName.trim() })
+            .then(() => fetchFolders())
+            .catch(err => {
+                console.error(err)
+                setErrorMessage(err.message || 'Failed to rename folder.')
+            })
+    }
+
+    const handleDeleteFolder = (folderId) => {
+        if (!window.confirm("Delete this folder? Files inside will move back to the root, nothing is deleted.")) {
+            return;
+        }
+
+        setErrorMessage('')
+        api.delete(`/api/vehicles/${id}/folders/${folderId}`)
+            .then(() => {
+                fetchFolders()
+                if (currentFolderId === folderId) setCurrentFolderId(null)
+                else fetchFiles()
+            })
+            .catch(err => {
+                console.error(err)
+                setErrorMessage(err.message || 'Failed to delete folder.')
+            })
+    }
+
+    const handleOpenFolder = (folderId) => {
+        setCurrentFolderId(folderId)
+    }
+
+    const handleBackToRoot = () => {
+        setCurrentFolderId(null)
+    }
+
     useEffect(() => {
         fetchServiceLogs()
         fetchFiles()
+        fetchFolders()
         fetchNotes()
         fetchReminders()
         fetchVignetteCheck()
     }, [id, vehicle])
+
+    useEffect(() => {
+        if (vehicle) fetchFiles(currentFolderId)
+    }, [currentFolderId])
 
     const handleAddServiceLog = (e) => {
         e.preventDefault()
@@ -707,15 +782,20 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                     setErrorMessage('')
                                     const formData = new FormData()
                                     formData.append("file", e.target.files[0])
+                                    if (currentFolderId != null) formData.append("folderId", currentFolderId)
                                     api.post(`/api/vehicles/${id}/files`, formData)
-                                        .then(() => fetchFiles())
+                                        .then(() => { fetchFiles(); fetchFolders() })
                                         .catch(err => {
                                             console.error(err)
                                             setErrorMessage(err.message || 'Failed to upload file.')
                                         })
                                 }}
                             />
-                            <div style={{ fontSize: '10px', color: '#666' }}>Upload receipts, manuals, or other documents.</div>
+                            <div style={{ fontSize: '10px', color: '#666' }}>
+                                {currentFolderId != null
+                                    ? `Uploading into: ${folders.find(f => f.id === currentFolderId)?.name || 'folder'}`
+                                    : 'Upload receipts, manuals, or other documents.'}
+                            </div>
                         </div>
                     </div>
 
@@ -773,8 +853,87 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                     </div>
 
                     <div style={{ border: '1px solid #000', padding: '10px', backgroundColor: '#fafafa' }}>
-                        <div style={{ fontWeight: 'bold', borderBottom: '1px solid #000', paddingBottom: '3px', marginBottom: '6px' }}>DOCUMENT ARCHIVE</div>
-                        {files.length === 0 ? <div style={{ fontSize: '11px', color: '#666' }}>No files uploaded yet.</div> : (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #000', paddingBottom: '3px', marginBottom: '8px' }}>
+                            <span style={{ fontWeight: 'bold' }}>
+                                {currentFolderId != null
+                                    ? `DOCUMENT ARCHIVE — ${folders.find(f => f.id === currentFolderId)?.name || ''}`
+                                    : 'DOCUMENT ARCHIVE'}
+                            </span>
+                            {currentFolderId != null && (
+                                <button onClick={handleBackToRoot} style={{ ...baseButtonStyle, padding: '2px 8px' }}>
+                                    ◄ Back to Documents
+                                </button>
+                            )}
+                        </div>
+
+                        {currentFolderId === null && (
+                            <>
+                                <form onSubmit={handleCreateFolder} style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
+                                    <input
+                                        type="text"
+                                        placeholder="New folder name"
+                                        value={newFolderName}
+                                        onChange={e => setNewFolderName(e.target.value)}
+                                        style={{ ...baseInputStyle, flex: 1 }}
+                                    />
+                                    <button type="submit" style={baseButtonStyle}>New Folder</button>
+                                </form>
+
+                                {folders.length > 0 && (
+                                    <div
+                                        style={{
+                                            display: 'grid',
+                                            gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))',
+                                            gap: '10px',
+                                            marginBottom: '15px'
+                                        }}
+                                    >
+                                        {folders.map(folder => (
+                                            <div
+                                                key={folder.id}
+                                                onClick={() => handleOpenFolder(folder.id)}
+                                                style={{
+                                                    border: '1px solid #999',
+                                                    background: '#e8e8e8',
+                                                    padding: '8px 4px',
+                                                    textAlign: 'center',
+                                                    cursor: 'pointer',
+                                                    userSelect: 'none'
+                                                }}
+                                                title={`${folder.fileCount} item(s)`}
+                                            >
+                                                <div style={{ fontSize: '24px', lineHeight: 1 }}>📁</div>
+                                                <div style={{
+                                                    fontSize: '11px',
+                                                    fontWeight: 'bold',
+                                                    marginTop: '4px',
+                                                    wordBreak: 'break-word'
+                                                }}>
+                                                    {folder.name}
+                                                </div>
+                                                <div style={{ fontSize: '9px', color: '#666' }}>{folder.fileCount} item(s)</div>
+                                                <div style={{ display: 'flex', justifyContent: 'center', gap: '4px', marginTop: '4px' }}>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handleRenameFolder(folder) }}
+                                                        style={{ ...baseButtonStyle, padding: '0px 3px', fontSize: '9px' }}
+                                                    >
+                                                        Rename
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder.id) }}
+                                                        style={{ ...baseButtonStyle, padding: '0px 3px', fontSize: '9px', color: '#a00' }}
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </>
+                        )}
+
+                        {files.length === 0 ? <div style={{ fontSize: '11px', color: '#666' }}>No files here yet.</div> : (
                             <div className="table-scroll-wrapper">
                                 <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: '#fff' }}>
                                     <tbody>
@@ -786,8 +945,24 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                                 </button>
                                             </td>
                                             <td style={{ ...tdStyle, width: '15%', color: '#666' }}>{file.fileType}</td>
-                                            <td style={{ ...tdStyle, width: '15%', textAlign: 'center' }}>
-                                                <div className="action-buttons" style={{ justifyContent: 'center' }}>
+                                            <td style={{ ...tdStyle, width: '25%', textAlign: 'center' }}>
+                                                <div className="action-buttons" style={{ justifyContent: 'center', gap: '4px' }}>
+                                                    <select
+                                                        value=""
+                                                        onChange={(e) => {
+                                                            const val = e.target.value
+                                                            handleMoveFile(file.id, val === 'root' ? null : Number(val))
+                                                        }}
+                                                        style={{ fontSize: '10px', fontFamily: 'monospace' }}
+                                                    >
+                                                        <option value="" disabled>Move to...</option>
+                                                        {currentFolderId !== null && <option value="root">Root</option>}
+                                                        {folders
+                                                            .filter(f => f.id !== currentFolderId)
+                                                            .map(f => (
+                                                                <option key={f.id} value={f.id}>{f.name}</option>
+                                                            ))}
+                                                    </select>
                                                     <button onClick={() => handleDeleteFile(file.id)} style={{ ...baseButtonStyle, padding: '1px 4px', color: '#a00' }}>Delete</button>
                                                 </div>
                                             </td>
