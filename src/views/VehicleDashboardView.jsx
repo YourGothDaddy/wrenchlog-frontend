@@ -382,7 +382,8 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
             lastServiceAtOdometer: null,
             intervalOdometer: null,
             intervalMonths: 12,
-            lastServiceAtDate: lastServiceAtDate.toISOString().split('T')[0]
+            lastServiceAtDate: lastServiceAtDate.toISOString().split('T')[0],
+            sourceType: 'VIGNETTE'
         }
         api.post(`/api/reminders?vehicleId=${id}`, payload)
             .then(() => { fetchReminders(); fetchVignetteCheck(); })
@@ -497,7 +498,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
     const tdStyle = { padding: '5px', border: '1px solid #aaa', fontSize: '12px', textAlign: 'left' };
     const thStyle = { padding: '5px', border: '1px solid #aaa', fontSize: '12px', textAlign: 'left', background: '#eaeaea', color: '#000' };
 
-    const hasVignetteReminder = reminders.some(r => r.title === 'Vignette renewal')
+    const hasVignetteReminder = reminders.some(r => r.sourceType === 'VIGNETTE')
 
     return (
         <div style={{ padding: '10px', fontFamily: 'monospace', color: '#000', backgroundColor: '#fff' }}>
@@ -633,7 +634,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                                 <td style={tdStyle}>
                                                     <span style={{ fontWeight: 'bold' }}>{rem.title}</span>
                                                     {rem.description && <div style={{ fontSize: '11px', color: '#555' }}>Note: {rem.description}</div>}
-                                                    {rem.title === 'Vignette renewal' && vignetteCheck?.hasLocalReminder && (
+                                                    {rem.sourceType === 'VIGNETTE' && vignetteCheck?.hasLocalReminder && (
                                                         vignetteCheck.bgTollFound ? (
                                                             <div style={{ fontSize: '10px', marginTop: '2px', fontWeight: 'bold', color: vignetteCheck.match ? '#006600' : '#cc0000' }}>
                                                                 {vignetteCheck.match ? '✓ Confirmed by BGTOLL' : '✗ BGTOLL date mismatch'}
