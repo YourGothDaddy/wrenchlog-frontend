@@ -58,6 +58,12 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
 
     const [vignetteCheck, setVignetteCheck] = useState(null)
 
+    const [inspectionCheck, setInspectionCheck] = useState(null)
+    const [inspectionCaptchaSession, setInspectionCaptchaSession] = useState(null)
+    const [inspectionCaptchaCode, setInspectionCaptchaCode] = useState('')
+    const [showInspectionCaptcha, setShowInspectionCaptcha] = useState(false)
+    const [inspectionCheckLoading, setInspectionCheckLoading] = useState(false)
+
     const [editingOdometer, setEditingOdometer] = useState(false)
     const [odometerValue, setOdometerValue] = useState('')
 
@@ -393,6 +399,108 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
             })
     }
 
+    const handleStartInspectionCheck = () => {
+        setErrorMessage('')
+        setInspectionCheckLoading(true)
+        api.post(`/api/vehicles/${id}/inspection-check/start`)
+            .then(data => {
+                setInspectionCaptchaSession(data)
+                setShowInspectionCaptcha(true)
+                setInspectionCaptchaCode('')
+            })
+            .catch(err => {
+                console.error(err)
+                setErrorMessage(err.message || 'Failed to start inspection check.')
+            })
+            .finally(() => setInspectionCheckLoading(false))
+    }
+
+    const handleSubmitInspectionCaptcha = (e) => {
+        e.preventDefault()
+        if (!inspectionCaptchaCode.trim()) return
+        setErrorMessage('')
+        setInspectionCheckLoading(true)
+        api.post(`/api/vehicles/${id}/inspection-check/submit`, {
+            sessionToken: inspectionCaptchaSession.sessionToken,
+            captchaCode: inspectionCaptchaCode.trim()
+        })
+            .then(data => {
+                if (data.captchaInvalid) {
+                    setErrorMessage('Could not read the captcha. Fetching a new one.')
+                    handleStartInspectionCheck()
+                    return
+                }
+                setInspectionCheck(data)
+                setShowInspectionCaptcha(false)
+                setInspectionCaptchaSession(null)
+                setInspectionCaptchaCode('')
+                fetchReminders()
+            })
+            .catch(err => {
+                console.error(err)
+                setErrorMessage(err.message || 'Failed to submit inspection check.')
+            })
+            .finally(() => setInspectionCheckLoading(false))
+    }
+
+    const handleCancelInspectionCaptcha = () => {
+        setShowInspectionCaptcha(false)
+        setInspectionCaptchaSession(null)
+        setInspectionCaptchaCode('')
+    }
+
+    const handleAdoptRtaInspection = () => {
+        setErrorMessage('')
+        const lastServiceAtDate = new Date(inspectionCheck.rtaExpiryDate)
+        lastServiceAtDate.setFullYear(lastServiceAtDate.getFullYear() - 1)
+        const payload = {
+            title: 'Inspection due',
+            description: null,
+            lastServiceAtOdometer: null,
+            intervalOdometer: null,
+            intervalMonths: 12,
+            lastServiceAtDate: lastServiceAtDate.toISOString().split('T')[0],
+            sourceType: 'INSPECTION',
+            verifiedExpiryDate: inspectionCheck.rtaExpiryDate
+        }
+        api.post(`/api/reminders?vehicleId=${id}`, payload)
+            .then(() => { fetchReminders(); setInspectionCheck(null) })
+            .catch(err => {
+                console.error(err)
+                setErrorMessage(err.message || 'Failed to save inspection reminder.')
+            })
+    }
+
+    const handleSetInspectionDateToMatchRta = (rem) => {
+        if (!inspectionCheck?.rtaExpiryDate) return
+        setErrorMessage('')
+        const lastServiceAtDate = new Date(inspectionCheck.rtaExpiryDate)
+        lastServiceAtDate.setFullYear(lastServiceAtDate.getFullYear() - 1)
+        const payload = {
+            title: rem.title,
+            description: rem.description,
+            lastServiceAtOdometer: rem.lastServiceAtOdometer,
+            intervalOdometer: rem.intervalOdometer,
+            intervalMonths: 12,
+            lastServiceAtDate: lastServiceAtDate.toISOString().split('T')[0],
+            verifiedExpiryDate: inspectionCheck.rtaExpiryDate
+        }
+        api.put(`/api/reminders/${rem.id}?vehicleId=${id}`, payload)
+            .then(() => {
+                fetchReminders()
+                setInspectionCheck(prev => ({
+                    ...prev,
+                    match: true,
+                    enteredExpiryDate: prev.rtaExpiryDate,
+                    message: 'Confirmed by RTA'
+                }))
+            })
+            .catch(err => {
+                console.error(err)
+                setErrorMessage(err.message || 'Failed to update reminder date.')
+            })
+    }
+
     const openDetailsForm = () => {
         setDetailsForm({
             vin: vehicle.vin || '', plateNumber: vehicle.plateNumber || '', engineCode: vehicle.engineCode || '',
@@ -575,10 +683,20 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                     style={{
                         padding: '6px 12px', cursor: 'pointer', fontSize: '12px', fontFamily: 'monospace', fontWeight: 'bold',
                         border: '1px solid #000', borderBottom: activeTab === 'electrical' ? '2px solid #fff' : '1px solid #000',
-                        backgroundColor: activeTab === 'electrical' ? '#fff' : '#e1e1e1', marginBottom: '-2px'
+                        backgroundColor: activeTab === 'electrical' ? '#fff' : '#e1e1e1', marginBottom: '-2px', marginRight: '4px'
                     }}
                 >
                     Electrical
+                </button>
+                <button
+                    onClick={() => setActiveTab('compliance')}
+                    style={{
+                        padding: '6px 12px', cursor: 'pointer', fontSize: '12px', fontFamily: 'monospace', fontWeight: 'bold',
+                        border: '1px solid #000', borderBottom: activeTab === 'compliance' ? '2px solid #fff' : '1px solid #000',
+                        backgroundColor: activeTab === 'compliance' ? '#fff' : '#e1e1e1', marginBottom: '-2px'
+                    }}
+                >
+                    Compliance
                 </button>
             </div>
 
@@ -610,7 +728,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                             </form>
                         )}
 
-                        {reminders.length === 0 && !(vignetteCheck?.bgTollFound && !hasVignetteReminder) ? (
+                        {reminders.length === 0 ? (
                             <div style={{ color: '#555', fontSize: '11px' }}>No reminders set yet.</div>
                         ) : (
                             <div className="table-scroll-wrapper">
@@ -637,7 +755,9 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                                     {rem.sourceType === 'VIGNETTE' && vignetteCheck?.hasLocalReminder && (
                                                         vignetteCheck.bgTollFound ? (
                                                             <div style={{ fontSize: '10px', marginTop: '2px', fontWeight: 'bold', color: vignetteCheck.match ? '#006600' : '#cc0000' }}>
-                                                                {vignetteCheck.match ? '✓ Confirmed by BGTOLL' : '✗ BGTOLL date mismatch'}
+                                                                {vignetteCheck.match
+                                                                    ? '✓ Confirmed by BGTOLL'
+                                                                    : `✗ BGTOLL mismatch (BGTOLL: ${formatDate(vignetteCheck.bgTollExpiryDate)})`}
                                                             </div>
                                                         ) : (
                                                             <div style={{ fontSize: '10px', marginTop: '2px', color: '#997a00' }}>
@@ -645,14 +765,47 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                                             </div>
                                                         )
                                                     )}
+                                                    {rem.sourceType === 'INSPECTION' && (
+                                                        inspectionCheck?.hasLocalReminder && inspectionCheck.rtaFound && !inspectionCheck.match ? (
+                                                            <div style={{ fontSize: '10px', marginTop: '2px', fontWeight: 'bold', color: '#cc0000' }}>
+                                                                ✗ RTA mismatch (RTA: {formatDate(inspectionCheck.rtaExpiryDate)})
+                                                            </div>
+                                                        ) : rem.verifiedExpiryDate && new Date(rem.verifiedExpiryDate) >= new Date(new Date().toDateString()) ? (
+                                                            <div style={{ fontSize: '10px', marginTop: '2px', fontWeight: 'bold', color: '#006600' }}>
+                                                                ✓ Confirmed by RTA until {formatDate(rem.verifiedExpiryDate)}
+                                                            </div>
+                                                        ) : (
+                                                            <div style={{ fontSize: '10px', marginTop: '2px', color: '#997a00' }}>
+                                                                ? Not verified yet - check under Compliance tab
+                                                            </div>
+                                                        )
+                                                    )}
                                                 </td>
                                                 <td style={tdStyle}>
-                                                    {rem.intervalOdometer && <div>Odo: Every {rem.intervalOdometer.toLocaleString()} km (Last: {rem.lastServiceAtOdometer?.toLocaleString()} km)</div>}
-                                                    {rem.intervalMonths && <div>Time: Every {rem.intervalMonths} Mos (Last: {rem.lastServiceAtDate || "None"})</div>}
+                                                    {['VIGNETTE', 'INSPECTION', 'INSURANCE'].includes(rem.sourceType) && rem.lastServiceAtDate && rem.intervalMonths ? (
+                                                        <div style={{ fontWeight: 'bold' }}>
+                                                            Valid until: {formatDate(
+                                                            new Date(new Date(rem.lastServiceAtDate).setMonth(new Date(rem.lastServiceAtDate).getMonth() + rem.intervalMonths)).toISOString().split('T')[0]
+                                                        )}
+                                                        </div>
+                                                    ) : (
+                                                        <>
+                                                            {rem.intervalOdometer && <div>Odo: Every {rem.intervalOdometer.toLocaleString()} km (Last: {rem.lastServiceAtOdometer?.toLocaleString()} km)</div>}
+                                                            {rem.intervalMonths && <div>Time: Every {rem.intervalMonths} Mos (Last: {rem.lastServiceAtDate || "None"})</div>}
+                                                        </>
+                                                    )}
                                                 </td>
                                                 <td style={tdStyle}>
                                                     <div className="action-buttons">
-                                                        <button onClick={() => handleResetReminder(rem)} style={{ ...baseButtonStyle, background: isDue ? '#ffcccc' : '#ccffcc', padding: '2px 4px' }}>Mark Done</button>
+                                                        {rem.sourceType === 'INSPECTION' ? (
+                                                            inspectionCheck?.hasLocalReminder && inspectionCheck.rtaFound && !inspectionCheck.match && (
+                                                                <button onClick={() => handleSetInspectionDateToMatchRta(rem)} style={{ ...baseButtonStyle, background: '#ffe4b3', padding: '2px 4px' }}>
+                                                                    Set date to match RTA
+                                                                </button>
+                                                            )
+                                                        ) : rem.sourceType === 'INSURANCE' ? null : (
+                                                            <button onClick={() => handleResetReminder(rem)} style={{ ...baseButtonStyle, background: isDue ? '#ffcccc' : '#ccffcc', padding: '2px 4px' }}>Mark Done</button>
+                                                        )}
                                                         <button onClick={() => handleEditReminderSetup(rem)} style={{ ...baseButtonStyle, padding: '2px 4px' }}>Edit</button>
                                                         <button onClick={() => handleDeleteReminder(rem.id)} style={{ ...baseButtonStyle, padding: '2px 4px', color: '#a00' }}>Delete</button>
                                                     </div>
@@ -660,21 +813,6 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                             </tr>
                                         );
                                     })}
-                                    {vignetteCheck?.bgTollFound && !hasVignetteReminder && (
-                                        <tr style={{ backgroundColor: '#fffbe6' }}>
-                                            <td style={{ ...tdStyle, color: '#997a00', fontWeight: 'bold' }}>DETECTED</td>
-                                            <td style={tdStyle}>
-                                                <span style={{ fontWeight: 'bold' }}>Vignette renewal</span>
-                                                <div style={{ fontSize: '10px', color: '#666', marginTop: '2px' }}>Found via BGTOLL, not saved yet.</div>
-                                            </td>
-                                            <td style={tdStyle}>
-                                                Time: Expires {formatDate(vignetteCheck.bgTollExpiryDate)}{vignetteCheck.bgTollStatus ? ` (${vignetteCheck.bgTollStatus})` : ''}
-                                            </td>
-                                            <td style={tdStyle}>
-                                                <button onClick={handleAdoptBgTollVignette} style={{ ...baseButtonStyle, padding: '2px 4px' }}>Save as Reminder</button>
-                                            </td>
-                                        </tr>
-                                    )}
                                     </tbody>
                                 </table>
                             </div>
@@ -1021,6 +1159,111 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                             ))}
                         </div>
                     )}
+                </div>
+            ) : activeTab === 'compliance' ? (
+                <div>
+                    <div style={{ border: '1px solid #000', padding: '10px', marginBottom: '15px', backgroundColor: '#fafafa' }}>
+                        <div style={{ fontWeight: 'bold', borderBottom: '1px solid #000', paddingBottom: '4px', marginBottom: '8px', fontSize: '13px' }}>
+                            Vignette (BGTOLL)
+                        </div>
+                        {!vehicle.plateNumber ? (
+                            <div style={{ fontSize: '11px', color: '#666' }}>No plate number on file. Add one under Maintenance → Vehicle Specifications.</div>
+                        ) : vignetteCheck ? (
+                            <div style={{ fontSize: '12px' }}>
+                                {vignetteCheck.bgTollFound ? (
+                                    <>
+                                        <div>Status: {vignetteCheck.bgTollStatus || 'Active'}</div>
+                                        <div>Expires: {formatDate(vignetteCheck.bgTollExpiryDate)}</div>
+                                        {vignetteCheck.hasLocalReminder ? (
+                                            <div style={{ fontWeight: 'bold', color: vignetteCheck.match ? '#006600' : '#cc0000', marginTop: '4px' }}>
+                                                {vignetteCheck.match ? '✓ Matches your saved reminder' : '✗ Does not match your saved reminder'}
+                                            </div>
+                                        ) : (
+                                            <button onClick={handleAdoptBgTollVignette} style={{ ...baseButtonStyle, marginTop: '6px' }}>
+                                                Save as Reminder
+                                            </button>
+                                        )}
+                                    </>
+                                ) : (
+                                    <div style={{ color: '#997a00' }}>{vignetteCheck.message}</div>
+                                )}
+                            </div>
+                        ) : (
+                            <div style={{ fontSize: '11px', color: '#666' }}>Checking...</div>
+                        )}
+                    </div>
+
+                    <div style={{ border: '1px solid #000', padding: '10px', marginBottom: '15px', backgroundColor: '#fafafa' }}>
+                        <div style={{ fontWeight: 'bold', borderBottom: '1px solid #000', paddingBottom: '4px', marginBottom: '8px', fontSize: '13px' }}>
+                            Annual Inspection (RTA)
+                        </div>
+
+                        {showInspectionCaptcha && inspectionCaptchaSession ? (
+                            <div>
+                                <div style={{ fontSize: '11px', marginBottom: '8px' }}>Enter the code shown below:</div>
+                                <img
+                                    src={`data:image/jpeg;base64,${inspectionCaptchaSession.captchaImageBase64}`}
+                                    alt="Captcha"
+                                    style={{ border: '1px solid #999', marginBottom: '8px', display: 'block' }}
+                                />
+                                <form onSubmit={handleSubmitInspectionCaptcha} style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                    <input
+                                        type="text"
+                                        placeholder="Code from image"
+                                        value={inspectionCaptchaCode}
+                                        onChange={e => setInspectionCaptchaCode(e.target.value)}
+                                        style={{ ...baseInputStyle, width: '140px' }}
+                                        autoFocus
+                                    />
+                                    <button type="submit" style={baseButtonStyle} disabled={inspectionCheckLoading}>
+                                        {inspectionCheckLoading ? 'Checking...' : 'Submit'}
+                                    </button>
+                                    <button type="button" onClick={handleCancelInspectionCaptcha} style={baseButtonStyle}>
+                                        Cancel
+                                    </button>
+                                </form>
+                            </div>
+                        ) : (
+                            <div>
+                                {!vehicle.plateNumber ? (
+                                    <div style={{ fontSize: '11px', color: '#666' }}>No plate number on file. Add one under Maintenance → Vehicle Specifications.</div>
+                                ) : (
+                                    <>
+                                        {inspectionCheck && (
+                                            <div style={{ fontSize: '12px', marginBottom: '8px' }}>
+                                                {inspectionCheck.rtaFound ? (
+                                                    <>
+                                                        <div>Expires: {formatDate(inspectionCheck.rtaExpiryDate)}</div>
+                                                        {inspectionCheck.hasLocalReminder ? (
+                                                            <div style={{ fontWeight: 'bold', color: inspectionCheck.match ? '#006600' : '#cc0000' }}>
+                                                                {inspectionCheck.match ? '✓ Matches your saved reminder' : '✗ Does not match your saved reminder'}
+                                                            </div>
+                                                        ) : (
+                                                            <button onClick={handleAdoptRtaInspection} style={{ ...baseButtonStyle, marginTop: '4px' }}>
+                                                                Save as Reminder
+                                                            </button>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <div style={{ color: '#997a00' }}>{inspectionCheck.message}</div>
+                                                )}
+                                            </div>
+                                        )}
+                                        <button onClick={handleStartInspectionCheck} style={baseButtonStyle} disabled={inspectionCheckLoading}>
+                                            {inspectionCheckLoading ? 'Loading...' : 'Check RTA Inspection Status'}
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    <div style={{ border: '1px solid #000', padding: '10px', backgroundColor: '#fafafa' }}>
+                        <div style={{ fontWeight: 'bold', borderBottom: '1px solid #000', paddingBottom: '4px', marginBottom: '8px', fontSize: '13px' }}>
+                            Insurance
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#666' }}>Automatic insurance verification is not yet available. Coming soon.</div>
+                    </div>
                 </div>
             ) : (
                 <ElectricalTab vehicleId={id} setErrorMessage={setErrorMessage} />
