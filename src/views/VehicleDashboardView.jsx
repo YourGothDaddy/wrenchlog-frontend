@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 import api, { BASE_URL } from '../utils/api'
 import { formatDate } from '../utils/dateFormat'
 import ElectricalTab from './ElectricalTab'
+import DwfViewerModal from '../components/DwfViewerModal'
 
 function VehicleDashboardView({ vehicles, fetchGarage  }) {
     const { id } = useParams()
@@ -64,10 +65,15 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
     const [showInspectionCaptcha, setShowInspectionCaptcha] = useState(false)
     const [inspectionCheckLoading, setInspectionCheckLoading] = useState(false)
 
+    const [insuranceCheck, setInsuranceCheck] = useState(null)
+    const [insuranceCheckLoading, setInsuranceCheckLoading] = useState(false)
+
     const [editingOdometer, setEditingOdometer] = useState(false)
     const [odometerValue, setOdometerValue] = useState('')
 
     const [errorMessage, setErrorMessage] = useState('')
+
+    const [viewingDwfFile, setViewingDwfFile] = useState(null)
 
     const fetchServiceLogs = () => {
         if (!vehicle) return
@@ -501,6 +507,73 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
             })
     }
 
+    const handleCheckInsurance = () => {
+        setErrorMessage('')
+        setInsuranceCheckLoading(true)
+        api.post(`/api/vehicles/${id}/insurance-check`)
+            .then(data => {
+                setInsuranceCheck(data)
+                fetchReminders()
+            })
+            .catch(err => {
+                console.error(err)
+                setErrorMessage(err.message || 'Failed to check insurance status.')
+            })
+            .finally(() => setInsuranceCheckLoading(false))
+    }
+
+    const handleAdoptInsurance = () => {
+        setErrorMessage('')
+        const lastServiceAtDate = new Date(insuranceCheck.insurerExpiryDate)
+        lastServiceAtDate.setFullYear(lastServiceAtDate.getFullYear() - 1)
+        const payload = {
+            title: 'Insurance renewal',
+            description: insuranceCheck.insurerName || null,
+            lastServiceAtOdometer: null,
+            intervalOdometer: null,
+            intervalMonths: 12,
+            lastServiceAtDate: lastServiceAtDate.toISOString().split('T')[0],
+            sourceType: 'INSURANCE',
+            verifiedExpiryDate: insuranceCheck.insurerExpiryDate
+        }
+        api.post(`/api/reminders?vehicleId=${id}`, payload)
+            .then(() => { fetchReminders(); setInsuranceCheck(null) })
+            .catch(err => {
+                console.error(err)
+                setErrorMessage(err.message || 'Failed to save insurance reminder.')
+            })
+    }
+
+    const handleSetInsuranceDateToMatch = (rem) => {
+        if (!insuranceCheck?.insurerExpiryDate) return
+        setErrorMessage('')
+        const lastServiceAtDate = new Date(insuranceCheck.insurerExpiryDate)
+        lastServiceAtDate.setFullYear(lastServiceAtDate.getFullYear() - 1)
+        const payload = {
+            title: rem.title,
+            description: rem.description,
+            lastServiceAtOdometer: rem.lastServiceAtOdometer,
+            intervalOdometer: rem.intervalOdometer,
+            intervalMonths: 12,
+            lastServiceAtDate: lastServiceAtDate.toISOString().split('T')[0],
+            verifiedExpiryDate: insuranceCheck.insurerExpiryDate
+        }
+        api.put(`/api/reminders/${rem.id}?vehicleId=${id}`, payload)
+            .then(() => {
+                fetchReminders()
+                setInsuranceCheck(prev => ({
+                    ...prev,
+                    match: true,
+                    enteredExpiryDate: prev.insurerExpiryDate,
+                    message: 'Confirmed by Guarantee Fund'
+                }))
+            })
+            .catch(err => {
+                console.error(err)
+                setErrorMessage(err.message || 'Failed to update reminder date.')
+            })
+    }
+
     const openDetailsForm = () => {
         setDetailsForm({
             vin: vehicle.vin || '', plateNumber: vehicle.plateNumber || '', engineCode: vehicle.engineCode || '',
@@ -577,26 +650,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
         return odoDue || dateDue;
     }
 
-    const getDueSummary = (reminder) => {
-        const parts = []
-
-        if (reminder.intervalOdometer && reminder.lastServiceAtOdometer !== null && reminder.lastServiceAtOdometer !== undefined) {
-            const kmRemaining = (reminder.lastServiceAtOdometer + reminder.intervalOdometer) - vehicle.kilometers
-            if (kmRemaining > 0) {
-                parts.push(`${kmRemaining.toLocaleString()} km remaining`)
-            } else {
-                parts.push(`${Math.abs(kmRemaining).toLocaleString()} km overdue`)
-            }
-        }
-
-        if (reminder.intervalMonths && reminder.lastServiceAtDate) {
-            const nextDueDate = new Date(reminder.lastServiceAtDate)
-            nextDueDate.setMonth(nextDueDate.getMonth() + reminder.intervalMonths)
-            parts.push(`due ${formatDate(nextDueDate.toISOString().split('T')[0])}`)
-        }
-
-        return parts.join(' · ')
-    }
+    const isDwfFile = (fileName) => /\.(dwf|dwfx)$/i.test(fileName)
 
     if (loading) return <div style={{ padding: '10px', fontFamily: 'monospace' }}>Loading workspace...</div>
     if (!vehicle) return <div style={{ padding: '10px', fontFamily: 'monospace' }}><p>Vehicle not found.</p><button onClick={() => navigate('/')}>Back</button></div>
@@ -605,8 +659,6 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
     const baseButtonStyle = { padding: '4px 12px', background: '#e1e1e1', border: '1px solid #777', cursor: 'pointer', fontSize: '12px', color: '#000', fontWeight: 'bold', fontFamily: 'monospace' };
     const tdStyle = { padding: '5px', border: '1px solid #aaa', fontSize: '12px', textAlign: 'left' };
     const thStyle = { padding: '5px', border: '1px solid #aaa', fontSize: '12px', textAlign: 'left', background: '#eaeaea', color: '#000' };
-
-    const hasVignetteReminder = reminders.some(r => r.sourceType === 'VIGNETTE')
 
     return (
         <div style={{ padding: '10px', fontFamily: 'monospace', color: '#000', backgroundColor: '#fff' }}>
@@ -776,7 +828,22 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                                             </div>
                                                         ) : (
                                                             <div style={{ fontSize: '10px', marginTop: '2px', color: '#997a00' }}>
-                                                                ? Not verified yet - check under Compliance tab
+                                                                ? Not verified yet — check under Compliance tab
+                                                            </div>
+                                                        )
+                                                    )}
+                                                    {rem.sourceType === 'INSURANCE' && (
+                                                        insuranceCheck?.hasLocalReminder && insuranceCheck.insurerFound && !insuranceCheck.match ? (
+                                                            <div style={{ fontSize: '10px', marginTop: '2px', fontWeight: 'bold', color: '#cc0000' }}>
+                                                                ✗ Guarantee Fund mismatch (Guarantee Fund: {formatDate(insuranceCheck.insurerExpiryDate)})
+                                                            </div>
+                                                        ) : rem.verifiedExpiryDate && new Date(rem.verifiedExpiryDate) >= new Date(new Date().toDateString()) ? (
+                                                            <div style={{ fontSize: '10px', marginTop: '2px', fontWeight: 'bold', color: '#006600' }}>
+                                                                ✓ Confirmed by Guarantee Fund until {formatDate(rem.verifiedExpiryDate)}
+                                                            </div>
+                                                        ) : (
+                                                            <div style={{ fontSize: '10px', marginTop: '2px', color: '#997a00' }}>
+                                                                ? Not verified yet — check under Compliance tab
                                                             </div>
                                                         )
                                                     )}
@@ -803,7 +870,13 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                                                     Set date to match RTA
                                                                 </button>
                                                             )
-                                                        ) : rem.sourceType === 'INSURANCE' ? null : (
+                                                        ) : rem.sourceType === 'INSURANCE' ? (
+                                                            insuranceCheck?.hasLocalReminder && insuranceCheck.insurerFound && !insuranceCheck.match && (
+                                                                <button onClick={() => handleSetInsuranceDateToMatch(rem)} style={{ ...baseButtonStyle, background: '#ffe4b3', padding: '2px 4px' }}>
+                                                                    Set date to match Insurer
+                                                                </button>
+                                                            )
+                                                        ) : (
                                                             <button onClick={() => handleResetReminder(rem)} style={{ ...baseButtonStyle, background: isDue ? '#ffcccc' : '#ccffcc', padding: '2px 4px' }}>Mark Done</button>
                                                         )}
                                                         <button onClick={() => handleEditReminderSetup(rem)} style={{ ...baseButtonStyle, padding: '2px 4px' }}>Edit</button>
@@ -1097,6 +1170,14 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                             <td style={{ ...tdStyle, width: '15%', color: '#666' }}>{file.fileType}</td>
                                             <td style={{ ...tdStyle, width: '25%', textAlign: 'center' }}>
                                                 <div className="action-buttons" style={{ justifyContent: 'center', gap: '4px' }}>
+                                                    {isDwfFile(file.fileName) && (
+                                                        <button
+                                                            onClick={() => setViewingDwfFile(file)}
+                                                            style={{ ...baseButtonStyle, padding: '1px 4px' }}
+                                                        >
+                                                            View
+                                                        </button>
+                                                    )}
                                                     <select
                                                         value=""
                                                         onChange={(e) => {
@@ -1114,6 +1195,14 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                                             ))}
                                                     </select>
                                                     <button onClick={() => handleDeleteFile(file.id)} style={{ ...baseButtonStyle, padding: '1px 4px', color: '#a00' }}>Delete</button>
+                                                    {viewingDwfFile && (
+                                                        <DwfViewerModal
+                                                            vehicleId={id}
+                                                            fileId={viewingDwfFile.id}
+                                                            fileName={viewingDwfFile.fileName}
+                                                            onClose={() => setViewingDwfFile(null)}
+                                                        />
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>
@@ -1260,9 +1349,38 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
 
                     <div style={{ border: '1px solid #000', padding: '10px', backgroundColor: '#fafafa' }}>
                         <div style={{ fontWeight: 'bold', borderBottom: '1px solid #000', paddingBottom: '4px', marginBottom: '8px', fontSize: '13px' }}>
-                            Insurance
+                            Insurance (Guarantee Fund)
                         </div>
-                        <div style={{ fontSize: '11px', color: '#666' }}>Automatic insurance verification is not yet available. Coming soon.</div>
+                        {!vehicle.plateNumber ? (
+                            <div style={{ fontSize: '11px', color: '#666' }}>No plate number on file. Add one under Maintenance → Vehicle Specifications.</div>
+                        ) : (
+                            <div>
+                                {insuranceCheck && (
+                                    <div style={{ fontSize: '12px', marginBottom: '8px' }}>
+                                        {insuranceCheck.insurerFound ? (
+                                            <>
+                                                <div>Insurer: {insuranceCheck.insurerName}</div>
+                                                <div>Expires: {formatDate(insuranceCheck.insurerExpiryDate)}</div>
+                                                {insuranceCheck.hasLocalReminder ? (
+                                                    <div style={{ fontWeight: 'bold', color: insuranceCheck.match ? '#006600' : '#cc0000' }}>
+                                                        {insuranceCheck.match ? '✓ Matches your saved reminder' : '✗ Does not match your saved reminder'}
+                                                    </div>
+                                                ) : (
+                                                    <button onClick={handleAdoptInsurance} style={{ ...baseButtonStyle, marginTop: '4px' }}>
+                                                        Save as Reminder
+                                                    </button>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <div style={{ color: '#997a00' }}>{insuranceCheck.message}</div>
+                                        )}
+                                    </div>
+                                )}
+                                <button onClick={handleCheckInsurance} style={baseButtonStyle} disabled={insuranceCheckLoading}>
+                                    {insuranceCheckLoading ? 'Checking...' : 'Check Insurance Status'}
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             ) : (

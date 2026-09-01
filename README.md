@@ -8,6 +8,8 @@ React SPA for WrenchLog. Talks to the [backend](../backend/README.md) over a RES
 - React Router
 - Plain `fetch` via a small shared `api.js` client (no external HTTP library)
 
+This project uses [dwf-viewer](https://github.com/flyfish-dev/dwf-viewer) (AGPL-3.0) for in-browser DWF/DWFx rendering. See [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md).
+
 ## Prerequisites
 
 - Node.js (18+ recommended)
