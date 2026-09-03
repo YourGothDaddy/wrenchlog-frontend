@@ -4,6 +4,7 @@ import api, { BASE_URL } from '../utils/api'
 import { formatDate } from '../utils/dateFormat'
 import ElectricalTab from './ElectricalTab'
 import DwfViewerModal from '../components/DwfViewerModal'
+import useVehicleCatalog from '../hooks/useVehicleCatalog'
 
 function VehicleDashboardView({ vehicles, fetchGarage  }) {
     const { id } = useParams()
@@ -74,6 +75,19 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
     const [errorMessage, setErrorMessage] = useState('')
 
     const [viewingDwfFile, setViewingDwfFile] = useState(null)
+
+    const [showIdentityForm, setShowIdentityForm] = useState(false)
+
+    const {
+        makes, models, generations, modifications,
+        selectedMake, setSelectedMake,
+        selectedModel, setSelectedModel,
+        selectedGeneration, setSelectedGeneration,
+        selectedModification, setSelectedModification,
+        year: identityYear, setYear: setIdentityYear,
+        isProductionYearRangeValid,
+        resetSelections
+    } = useVehicleCatalog(setErrorMessage)
 
     const fetchServiceLogs = () => {
         if (!vehicle) return
@@ -631,6 +645,54 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
             })
     }
 
+    const openIdentityForm = () => {
+        resetSelections()
+        setShowIdentityForm(true)
+    }
+
+    const handleSaveIdentity = (e) => {
+        e.preventDefault()
+        setErrorMessage('')
+        const payload = {
+            make: selectedMake,
+            model: `${selectedModel} ${selectedGeneration} (${selectedModification.modification})`,
+            year: identityYear && identityYear !== "" ? parseInt(identityYear) : null
+        }
+        api.put(`/api/vehicles/${id}/identity`, payload)
+            .then(() => {
+                setShowIdentityForm(false)
+                resetSelections()
+                fetchGarage()
+            })
+            .catch(err => {
+                console.error(err)
+                setErrorMessage(err.message || 'Failed to update vehicle identity.')
+            })
+    }
+
+    const renderIdentityYearOptions = () => {
+        if (!selectedModification) return <option value="">Choose Modification First</option>
+
+        if (!isProductionYearRangeValid()) {
+            return <option value="">No Production Years Available</option>
+        }
+
+        const start = selectedModification.startYear
+        const end = selectedModification.endYear ? selectedModification.endYear : 2026
+
+        const yearOptions = []
+        for (let y = start; y <= end; y++) {
+            yearOptions.push(y)
+        }
+
+        return (
+            <>
+                <option value="">Select Production Year</option>
+                {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
+            </>
+        )
+    }
+
     const clearReminderForm = () => {
         setReminderTitle(''); setReminderDesc(''); setLastServiceOdo('');
         setIntervalOdo(''); setIntervalMonths(''); setLastServiceDate('');
@@ -677,7 +739,15 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                 <tbody>
                 <tr>
                     <td style={{ ...tdStyle, background: '#f0f0f0', fontWeight: 'bold', width: '15%' }}>VEHICLE:</td>
-                    <td style={{ ...tdStyle, fontWeight: 'bold' }}>{vehicle.year} {vehicle.make} {vehicle.model}</td>
+                    <td style={{ ...tdStyle, fontWeight: 'bold' }}>
+                        {vehicle.year} {vehicle.make} {vehicle.model}
+                        <button
+                            onClick={() => showIdentityForm ? setShowIdentityForm(false) : openIdentityForm()}
+                            style={{ ...baseButtonStyle, marginLeft: '8px', padding: '1px 4px' }}
+                        >
+                            {showIdentityForm ? 'Cancel' : 'Edit'}
+                        </button>
+                    </td>
                     <td style={{ ...tdStyle, background: '#f0f0f0', fontWeight: 'bold', width: '20%' }}>CURRENT ODOMETER:</td>
                     <td style={{ ...tdStyle, fontWeight: 'bold', width: '20%' }}>
                         {vehicle.kilometers.toLocaleString()} km
@@ -691,6 +761,82 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                 </tr>
                 </tbody>
             </table>
+
+            {showIdentityForm && (
+                <div style={{ border: '1px solid #000', padding: '10px', marginBottom: '15px', backgroundColor: '#fafafa' }}>
+                    <div style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '13px' }}>Edit Vehicle Identity</div>
+                    <div style={{ fontSize: '11px', color: '#666', marginBottom: '8px' }}>
+                        Re-select the full make/model/generation/modification/year. This replaces the vehicle's current identity.
+                    </div>
+                    <form onSubmit={handleSaveIdentity} className="responsive-grid">
+                        <div>
+                            <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>Make</div>
+                            <select value={selectedMake} onChange={e => setSelectedMake(e.target.value)} required style={baseInputStyle}>
+                                <option value="">Select Make</option>
+                                {makes.map(m => <option key={m} value={m}>{m}</option>)}
+                            </select>
+                        </div>
+
+                        <div>
+                            <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>Model</div>
+                            <select value={selectedModel} onChange={e => setSelectedModel(e.target.value)} disabled={!selectedMake} required style={baseInputStyle}>
+                                <option value="">Select Model</option>
+                                {models.map(m => <option key={m} value={m}>{m}</option>)}
+                            </select>
+                        </div>
+
+                        <div>
+                            <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>Generation</div>
+                            <select value={selectedGeneration}
+                                    onChange={e => setSelectedGeneration(e.target.value)}
+                                    disabled={!selectedModel && generations.length <= 1}
+                                    required style={baseInputStyle}>
+                                {generations.length <= 1 ? (
+                                    <option value={selectedGeneration}>No Generation Data</option>
+                                ) : (
+                                    <>
+                                        <option value="">Select Generation</option>
+                                        {generations.map(g => <option key={g} value={g}>{g}</option>)}
+                                    </>
+                                )}
+                            </select>
+                        </div>
+
+                        <div>
+                            <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>Engine Modification</div>
+                            <select
+                                value={selectedModification ? JSON.stringify(selectedModification) : ''}
+                                onChange={e => setSelectedModification(e.target.value ? JSON.parse(e.target.value) : null)}
+                                disabled={!selectedGeneration}
+                                required
+                                style={baseInputStyle}
+                            >
+                                <option value="">Select Modification</option>
+                                {modifications.map(m => (
+                                    <option key={m.id} value={JSON.stringify(m)}>{m.modification}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div>
+                            <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>Year of Manufacture</div>
+                            {isProductionYearRangeValid() ? (
+                                <select value={identityYear} onChange={e => setIdentityYear(e.target.value)} disabled={!selectedModification} required style={baseInputStyle}>
+                                    {renderIdentityYearOptions()}
+                                </select>
+                            ) : (
+                                <select value="" style={baseInputStyle}>
+                                    {renderIdentityYearOptions()}
+                                </select>
+                            )}
+                        </div>
+
+                        <div style={{ gridColumn: '1 / -1', marginTop: '4px' }}>
+                            <button type="submit" style={{ ...baseButtonStyle, width: '100%', padding: '6px' }}>Save Vehicle Identity</button>
+                        </div>
+                    </form>
+                </div>
+            )}
 
             {editingOdometer && (
                 <div style={{ border: '1px solid #000', padding: '10px', marginBottom: '15px', backgroundColor: '#fafafa' }}>
