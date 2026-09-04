@@ -7,6 +7,8 @@ import ElectricalTab from './ElectricalTab'
 import DwfViewerModal from '../components/DwfViewerModal'
 import useVehicleCatalog from '../hooks/useVehicleCatalog'
 import { baseInputStyle as sharedInputStyle, baseButtonStyle, tdStyle as sharedTdStyle, thStyle as sharedThStyle } from '../styles/shared'
+import useServiceLogs from '../hooks/useServiceLogs'
+import useVehicleNotes from '../hooks/useVehicleNotes'
 
 function VehicleDashboardView({ vehicles, fetchGarage }) {
     const { t } = useTranslation()
@@ -17,31 +19,10 @@ function VehicleDashboardView({ vehicles, fetchGarage }) {
 
     const [activeTab, setActiveTab] = useState('history')
 
-    const [serviceLogs, setServiceLogs] = useState([])
-    const [loading, setLoading] = useState(true)
-
-    const [description, setDescription] = useState('')
-    const [cost, setCost] = useState('')
-    const [kilometersAtService, setKilometersAtService] = useState('')
-    const [serviceDate, setServiceDate] = useState('')
-
-    const [modifyModalIsOpen, setModifyModal] = useState(false)
-    const [currentActiveLog, setCurrentActiveLog] = useState(null)
-
-    const [modalDescription, setModalDescription] = useState('')
-    const [modalCost, setModalCost] = useState('')
-    const [modalKilometersAtService, setModalKilometersAtService] = useState('')
-    const [modalServiceDate, setModalServiceDate] = useState('')
-
     const [files, setFiles] = useState([])
     const [folders, setFolders] = useState([])
     const [currentFolderId, setCurrentFolderId] = useState(null)
     const [newFolderName, setNewFolderName] = useState('')
-
-    const [notes, setNotes] = useState([])
-    const [noteTitle, setNoteTitle] = useState('')
-    const [noteContent, setNoteContent] = useState('')
-    const [editingNoteId, setEditingNoteId] = useState(null)
 
     const [reminders, setReminders] = useState([])
     const [reminderTitle, setReminderTitle] = useState('')
@@ -63,6 +44,29 @@ function VehicleDashboardView({ vehicles, fetchGarage }) {
 
     const [showIdentityForm, setShowIdentityForm] = useState(false)
     const [errorMessage, setErrorMessage] = useState('')
+
+    const {
+        serviceLogs, loading,
+        description, setDescription,
+        cost, setCost,
+        kilometersAtService, setKilometersAtService,
+        serviceDate, setServiceDate,
+        modifyModalIsOpen, setModifyModal, currentActiveLog,
+        modalDescription, setModalDescription,
+        modalCost, setModalCost,
+        modalKilometersAtService, setModalKilometersAtService,
+        modalServiceDate, setModalServiceDate,
+        handleAddServiceLog, handleDeleteServiceLog,
+        handleModifyServiceLogModal, handleModifyServiceLog
+    } = useServiceLogs(id, vehicle, setErrorMessage, fetchGarage)
+
+    const {
+        notes,
+        noteTitle, setNoteTitle,
+        noteContent, setNoteContent,
+        editingNoteId, setEditingNoteId,
+        handleSaveNote, handleEditNoteSetup, handleDeleteNote
+    } = useVehicleNotes(id, setErrorMessage)
 
     const {
         makes, models, generations, modifications,
@@ -90,17 +94,6 @@ function VehicleDashboardView({ vehicles, fetchGarage }) {
 
     const [viewingDwfFile, setViewingDwfFile] = useState(null)
 
-    const fetchServiceLogs = () => {
-        if (!vehicle) return
-        api.get(`/api/services?vehicleId=${id}`)
-            .then(logs => { setServiceLogs(logs); setLoading(false); })
-            .catch(err => {
-                console.error(err)
-                setLoading(false)
-                setErrorMessage(err.message || t('service.loadFailedDefault'))
-            })
-    }
-
     const fetchFiles = (folderId = currentFolderId) => {
         const query = folderId != null ? `?folderId=${folderId}` : ''
         api.get(`/api/vehicles/${id}/files${query}`)
@@ -117,15 +110,6 @@ function VehicleDashboardView({ vehicles, fetchGarage }) {
             .catch(err => {
                 console.error(err)
                 setErrorMessage(err.message || t('files.loadFoldersFailedDefault'))
-            })
-    }
-
-    const fetchNotes = () => {
-        api.get(`/api/vehicles/${id}/notes`)
-            .then(data => setNotes(data))
-            .catch(err => {
-                console.error(err)
-                setErrorMessage(err.message || t('notes.loadFailedDefault'))
             })
     }
 
@@ -229,10 +213,8 @@ function VehicleDashboardView({ vehicles, fetchGarage }) {
     }
 
     useEffect(() => {
-        fetchServiceLogs()
         fetchFiles()
         fetchFolders()
-        fetchNotes()
         fetchReminders()
         fetchVignetteCheck()
     }, [id, vehicle])
@@ -241,100 +223,6 @@ function VehicleDashboardView({ vehicles, fetchGarage }) {
         if (vehicle) fetchFiles(currentFolderId)
     }, [currentFolderId])
 
-    const handleAddServiceLog = (e) => {
-        e.preventDefault()
-        setErrorMessage('')
-        const newLog = { description, cost: parseFloat(cost), kilometersAtService: parseInt(kilometersAtService), serviceDate }
-        api.post(`/api/services?vehicleId=${id}`, newLog)
-            .then(() => {
-                setDescription(''); setCost(''); setKilometersAtService(''); setServiceDate('');
-                fetchServiceLogs()
-                fetchGarage()
-            })
-            .catch(err => {
-                console.error(err)
-                setErrorMessage(err.message || t('service.addFailedDefault'))
-            })
-    }
-
-    const handleDeleteServiceLog = (serviceLogId) => {
-        if (!window.confirm(t('service.confirmDelete'))) {
-            return;
-        }
-
-        setErrorMessage('')
-
-        api.delete(`/api/services/${serviceLogId}`)
-            .then(() => fetchServiceLogs())
-            .catch(err => {
-                console.error(err)
-                setErrorMessage(err.message || t('service.deleteFailedDefault'))
-            })
-    }
-
-    const handleModifyServiceLogModal = (log) => {
-        if (modifyModalIsOpen) {
-            setCurrentActiveLog(null); setModalDescription(''); setModalServiceDate('');
-            setModalKilometersAtService(''); setModalCost(''); setModifyModal(false)
-        } else {
-            setCurrentActiveLog(log); setModalDescription(log.description); setModalServiceDate(log.serviceDate);
-            setModalKilometersAtService(log.kilometersAtService); setModalCost(log.cost); setModifyModal(true)
-        }
-    }
-
-    const handleModifyServiceLog = (e) => {
-        e.preventDefault()
-        setErrorMessage('')
-        const modifiedServiceLog = {
-            description: modalDescription,
-            cost: parseFloat(modalCost),
-            kilometersAtService: parseInt(modalKilometersAtService),
-            serviceDate: modalServiceDate
-        }
-        api.put(`/api/services/${currentActiveLog.id}?vehicleId=${id}`, modifiedServiceLog)
-            .then(() => {
-                setModifyModal(false)
-                fetchServiceLogs()
-            })
-            .catch(err => {
-                console.error(err)
-                setErrorMessage(err.message || t('service.updateFailedDefault'))
-            })
-    }
-
-    const handleSaveNote = (e) => {
-        e.preventDefault()
-        setErrorMessage('')
-        const payload = { title: noteTitle, content: noteContent }
-        const isEditing = editingNoteId !== null
-        const endpoint = isEditing ? `/api/vehicles/${id}/notes/${editingNoteId}` : `/api/vehicles/${id}/notes`
-
-        const request = isEditing ? api.put(endpoint, payload) : api.post(endpoint, payload)
-        request.then(() => { setNoteTitle(''); setNoteContent(''); setEditingNoteId(null); fetchNotes(); })
-            .catch(err => {
-                console.error(err)
-                setErrorMessage(err.message || t('notes.saveFailedDefault'))
-            })
-    }
-
-    const handleEditNoteSetup = (note) => {
-        setNoteTitle(note.title); setNoteContent(note.content); setEditingNoteId(note.id);
-    }
-
-    const handleDeleteNote = (noteId) => {
-        if (!window.confirm(t('notes.confirmDelete'))) {
-            return;
-        }
-
-        setErrorMessage('')
-
-        api.delete(`/api/vehicles/${id}/notes/${noteId}`)
-            .then(() => fetchNotes())
-            .catch(err => {
-                console.error(err)
-                setErrorMessage(err.message || t('notes.deleteFailedDefault'))
-            })
-    }
 
     const handleSaveReminder = (e) => {
         e.preventDefault()
