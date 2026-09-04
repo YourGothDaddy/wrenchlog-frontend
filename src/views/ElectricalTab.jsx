@@ -2,13 +2,9 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import api from '../utils/api'
 
+import { baseButtonStyle, smallButtonStyle, tdStyle, thStyle, stickyThStyle, stickyTdStyle } from '../styles/shared'
+
 const baseInputStyle = { padding: '4px', border: '1px solid #777', background: '#fff', fontSize: '12px', fontFamily: 'monospace' }
-const baseButtonStyle = { padding: '4px 12px', background: '#e1e1e1', border: '1px solid #777', cursor: 'pointer', fontSize: '12px', color: '#000', fontWeight: 'bold', fontFamily: 'monospace' }
-const smallButtonStyle = { ...baseButtonStyle, padding: '2px 8px' }
-const tdStyle = { padding: '5px', border: '1px solid #aaa', fontSize: '12px', textAlign: 'left' }
-const thStyle = { padding: '5px', border: '1px solid #aaa', fontSize: '12px', textAlign: 'left', background: '#eaeaea', color: '#000' }
-const stickyThStyle = { ...thStyle, position: 'sticky', left: 0, zIndex: 2 }
-const stickyTdStyle = { ...tdStyle, position: 'sticky', left: 0, zIndex: 1, background: '#f0f0f0' }
 
 function ElectricalTab({ vehicleId, setErrorMessage }) {
     const { t } = useTranslation()

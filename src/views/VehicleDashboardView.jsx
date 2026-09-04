@@ -6,6 +6,7 @@ import { formatDate } from '../utils/dateFormat'
 import ElectricalTab from './ElectricalTab'
 import DwfViewerModal from '../components/DwfViewerModal'
 import useVehicleCatalog from '../hooks/useVehicleCatalog'
+import { baseInputStyle as sharedInputStyle, baseButtonStyle, tdStyle as sharedTdStyle, thStyle as sharedThStyle } from '../styles/shared'
 
 function VehicleDashboardView({ vehicles, fetchGarage }) {
     const { t } = useTranslation()
@@ -746,10 +747,9 @@ function VehicleDashboardView({ vehicles, fetchGarage }) {
     if (loading) return <div style={{ padding: '10px', fontFamily: 'monospace' }}>{t('vehicle.loadingWorkspace')}</div>
     if (!vehicle) return <div style={{ padding: '10px', fontFamily: 'monospace' }}><p>{t('vehicle.notFound')}</p><button onClick={() => navigate('/')}>{t('common.back')}</button></div>
 
-    const baseInputStyle = { padding: '4px', border: '1px solid #777', background: '#fff', fontSize: '12px', fontFamily: 'monospace', width: '100%' };
-    const baseButtonStyle = { padding: '4px 12px', background: '#e1e1e1', border: '1px solid #777', cursor: 'pointer', fontSize: '12px', color: '#000', fontWeight: 'bold', fontFamily: 'monospace' };
-    const tdStyle = { padding: '5px', border: '1px solid #aaa', fontSize: '12px', textAlign: 'left' };
-    const thStyle = { padding: '5px', border: '1px solid #aaa', fontSize: '12px', textAlign: 'left', background: '#eaeaea', color: '#000' };
+    const baseInputStyle = sharedInputStyle;
+    const tdStyle = sharedTdStyle;
+    const thStyle = sharedThStyle;
 
     return (
         <div style={{ padding: '10px', fontFamily: 'monospace', color: '#000', backgroundColor: '#fff' }}>

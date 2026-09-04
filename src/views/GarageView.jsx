@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import api from '../utils/api'
 import useVehicleCatalog from '../hooks/useVehicleCatalog'
+import { baseButtonStyle, baseInputStyle as sharedInputStyle } from '../styles/shared'
 
 function GarageView({ vehicles, loading, fetchGarage, username }){
     const { t } = useTranslation()
@@ -87,9 +88,8 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
             })
     }
 
-    const baseSelectStyle = { padding: '4px', border: '1px solid #777', background: '#fff', fontSize: '12px', fontFamily: 'monospace', width: '100%' };
-    const baseInputStyle = { padding: '4px', border: '1px solid #777', background: '#fff', fontSize: '12px', fontFamily: 'monospace', width: '100%' };
-    const baseButtonStyle = { padding: '4px 12px', background: '#e1e1e1', border: '1px solid #777', cursor: 'pointer', fontSize: '12px', color: '#000', fontWeight: 'bold', fontFamily: 'monospace' };
+    const baseSelectStyle = sharedInputStyle;
+    const baseInputStyle = sharedInputStyle;
     const tdStyle = { padding: '6px', border: '1px solid #aaa', fontSize: '12px', textAlign: 'left', verticalAlign: 'middle' };
     const thStyle = { padding: '6px', border: '1px solid #aaa', fontSize: '12px', textAlign: 'left', background: '#eaeaea', color: '#000', fontWeight: 'bold' };
 
