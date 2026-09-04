@@ -9,6 +9,7 @@ import useVehicleCatalog from '../hooks/useVehicleCatalog'
 import { baseInputStyle as sharedInputStyle, baseButtonStyle, tdStyle as sharedTdStyle, thStyle as sharedThStyle } from '../styles/shared'
 import useServiceLogs from '../hooks/useServiceLogs'
 import useVehicleNotes from '../hooks/useVehicleNotes'
+import useVehicleFiles from '../hooks/useVehicleFiles'
 
 function VehicleDashboardView({ vehicles, fetchGarage }) {
     const { t } = useTranslation()
@@ -18,11 +19,6 @@ function VehicleDashboardView({ vehicles, fetchGarage }) {
     const vehicle = vehicles.find(v => v.id === parseInt(id))
 
     const [activeTab, setActiveTab] = useState('history')
-
-    const [files, setFiles] = useState([])
-    const [folders, setFolders] = useState([])
-    const [currentFolderId, setCurrentFolderId] = useState(null)
-    const [newFolderName, setNewFolderName] = useState('')
 
     const [reminders, setReminders] = useState([])
     const [reminderTitle, setReminderTitle] = useState('')
@@ -69,6 +65,14 @@ function VehicleDashboardView({ vehicles, fetchGarage }) {
     } = useVehicleNotes(id, setErrorMessage)
 
     const {
+        files, folders, currentFolderId, newFolderName, setNewFolderName,
+        fetchFiles, fetchFolders,
+        handleDownload, handleDeleteFile, handleMoveFile,
+        handleCreateFolder, handleRenameFolder, handleDeleteFolder,
+        handleOpenFolder, handleBackToRoot
+    } = useVehicleFiles(id, vehicle, setErrorMessage)
+
+    const {
         makes, models, generations, modifications,
         selectedMake, setSelectedMake,
         selectedModel, setSelectedModel,
@@ -94,25 +98,6 @@ function VehicleDashboardView({ vehicles, fetchGarage }) {
 
     const [viewingDwfFile, setViewingDwfFile] = useState(null)
 
-    const fetchFiles = (folderId = currentFolderId) => {
-        const query = folderId != null ? `?folderId=${folderId}` : ''
-        api.get(`/api/vehicles/${id}/files${query}`)
-            .then(data => setFiles(data))
-            .catch(err => {
-                console.error(err)
-                setErrorMessage(err.message || t('files.loadFailedDefault'))
-            })
-    }
-
-    const fetchFolders = () => {
-        api.get(`/api/vehicles/${id}/folders`)
-            .then(data => setFolders(data))
-            .catch(err => {
-                console.error(err)
-                setErrorMessage(err.message || t('files.loadFoldersFailedDefault'))
-            })
-    }
-
     const fetchReminders = () => {
         api.get(`/api/reminders?vehicleId=${id}`)
             .then(data => setReminders(data))
@@ -129,99 +114,10 @@ function VehicleDashboardView({ vehicles, fetchGarage }) {
             .catch(err => console.error(err))
     }
 
-    const handleDownload = async (fileId) => {
-        setErrorMessage('')
-        try {
-            const { token } = await api.get(`/api/vehicles/${id}/files/${fileId}/download-token`);
-            window.location.href = `${BASE_URL}/api/vehicles/${id}/files/${fileId}/download?token=${token}`;
-        } catch (err) {
-            console.error(err)
-            setErrorMessage(err.message || t('files.downloadFailedDefault'))
-        }
-    };
-
-    const handleDeleteFile = (fileId) => {
-        if (!window.confirm(t('files.confirmDelete'))) return
-        setErrorMessage('')
-        api.delete(`/api/vehicles/${id}/files/${fileId}`)
-            .then(() => { fetchFiles(); fetchFolders() })
-            .catch(err => {
-                console.error(err)
-                setErrorMessage(err.message || t('files.deleteFailedDefault'))
-            })
-    }
-
-    const handleMoveFile = (fileId, targetFolderId) => {
-        setErrorMessage('')
-        api.patch(`/api/vehicles/${id}/files/${fileId}/folder`, { folderId: targetFolderId })
-            .then(() => { fetchFiles(); fetchFolders() })
-            .catch(err => {
-                console.error(err)
-                setErrorMessage(err.message || t('files.moveFailedDefault'))
-            })
-    }
-
-    const handleCreateFolder = (e) => {
-        e.preventDefault()
-        if (!newFolderName.trim()) return
-        setErrorMessage('')
-        api.post(`/api/vehicles/${id}/folders`, { name: newFolderName.trim() })
-            .then(() => { setNewFolderName(''); fetchFolders() })
-            .catch(err => {
-                console.error(err)
-                setErrorMessage(err.message || t('files.createFolderFailedDefault'))
-            })
-    }
-
-    const handleRenameFolder = (folder) => {
-        const newName = window.prompt(t('files.renamePrompt'), folder.name)
-        if (!newName || !newName.trim() || newName.trim() === folder.name) return
-
-        setErrorMessage('')
-        api.put(`/api/vehicles/${id}/folders/${folder.id}`, { name: newName.trim() })
-            .then(() => fetchFolders())
-            .catch(err => {
-                console.error(err)
-                setErrorMessage(err.message || t('files.renameFolderFailedDefault'))
-            })
-    }
-
-    const handleDeleteFolder = (folderId) => {
-        if (!window.confirm(t('files.confirmDeleteFolder'))) {
-            return;
-        }
-
-        setErrorMessage('')
-        api.delete(`/api/vehicles/${id}/folders/${folderId}`)
-            .then(() => {
-                fetchFolders()
-                if (currentFolderId === folderId) setCurrentFolderId(null)
-                else fetchFiles()
-            })
-            .catch(err => {
-                console.error(err)
-                setErrorMessage(err.message || t('files.deleteFolderFailedDefault'))
-            })
-    }
-
-    const handleOpenFolder = (folderId) => {
-        setCurrentFolderId(folderId)
-    }
-
-    const handleBackToRoot = () => {
-        setCurrentFolderId(null)
-    }
-
     useEffect(() => {
-        fetchFiles()
-        fetchFolders()
         fetchReminders()
         fetchVignetteCheck()
     }, [id, vehicle])
-
-    useEffect(() => {
-        if (vehicle) fetchFiles(currentFolderId)
-    }, [currentFolderId])
 
 
     const handleSaveReminder = (e) => {
