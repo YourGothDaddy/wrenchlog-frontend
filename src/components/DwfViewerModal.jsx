@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { DwfViewer } from 'dwf-viewer'
+import { useTranslation } from 'react-i18next'
 import api, { BASE_URL } from '../utils/api'
 
 function DwfViewerModal({ vehicleId, fileId, fileName, onClose }) {
+    const { t } = useTranslation()
     const containerRef = useRef(null)
     const viewerRef = useRef(null)
     const [loading, setLoading] = useState(true)
@@ -19,7 +21,7 @@ function DwfViewerModal({ vehicleId, fileId, fileName, onClose }) {
                 const response = await fetch(
                     `${BASE_URL}/api/vehicles/${vehicleId}/files/${fileId}/download?token=${token}`
                 )
-                if (!response.ok) throw new Error('Failed to fetch file for viewing.')
+                if (!response.ok) throw new Error(t('dwf.fetchFailedDefault'))
                 const blob = await response.blob()
 
                 if (cancelled || !containerRef.current) return
@@ -38,7 +40,7 @@ function DwfViewerModal({ vehicleId, fileId, fileName, onClose }) {
             } catch (err) {
                 console.error(err)
                 if (!cancelled) {
-                    setError(err.message || 'Failed to load diagram.')
+                    setError(err.message || t('dwf.loadFailedDefault'))
                     setLoading(false)
                 }
             }
@@ -73,19 +75,19 @@ function DwfViewerModal({ vehicleId, fileId, fileName, onClose }) {
                         cursor: 'pointer', fontSize: '12px', fontWeight: 'bold', fontFamily: 'monospace'
                     }}
                 >
-                    Close
+                    {t('dwf.close')}
                 </button>
             </div>
 
             {error && (
                 <div style={{ color: '#ff6b6b', fontFamily: 'monospace', marginBottom: '10px' }}>
-                    ERROR: {error}
+                    {t('common.errorPrefix')} {error}
                 </div>
             )}
 
             {loading && !error && (
                 <div style={{ color: '#fff', fontFamily: 'monospace', marginBottom: '10px' }}>
-                    Loading diagram...
+                    {t('dwf.loading')}
                 </div>
             )}
 

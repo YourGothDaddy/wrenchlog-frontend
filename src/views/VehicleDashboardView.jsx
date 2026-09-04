@@ -1,12 +1,14 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from "react"
+import { useTranslation } from 'react-i18next'
 import api, { BASE_URL } from '../utils/api'
 import { formatDate } from '../utils/dateFormat'
 import ElectricalTab from './ElectricalTab'
 import DwfViewerModal from '../components/DwfViewerModal'
 import useVehicleCatalog from '../hooks/useVehicleCatalog'
 
-function VehicleDashboardView({ vehicles, fetchGarage  }) {
+function VehicleDashboardView({ vehicles, fetchGarage }) {
+    const { t } = useTranslation()
     const { id } = useParams()
     const navigate = useNavigate()
 
@@ -58,25 +60,8 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
         insuranceExpiryDate: '', vignetteExpiryDate: '', inspectionDueDate: ''
     })
 
-    const [vignetteCheck, setVignetteCheck] = useState(null)
-
-    const [inspectionCheck, setInspectionCheck] = useState(null)
-    const [inspectionCaptchaSession, setInspectionCaptchaSession] = useState(null)
-    const [inspectionCaptchaCode, setInspectionCaptchaCode] = useState('')
-    const [showInspectionCaptcha, setShowInspectionCaptcha] = useState(false)
-    const [inspectionCheckLoading, setInspectionCheckLoading] = useState(false)
-
-    const [insuranceCheck, setInsuranceCheck] = useState(null)
-    const [insuranceCheckLoading, setInsuranceCheckLoading] = useState(false)
-
-    const [editingOdometer, setEditingOdometer] = useState(false)
-    const [odometerValue, setOdometerValue] = useState('')
-
-    const [errorMessage, setErrorMessage] = useState('')
-
-    const [viewingDwfFile, setViewingDwfFile] = useState(null)
-
     const [showIdentityForm, setShowIdentityForm] = useState(false)
+    const [errorMessage, setErrorMessage] = useState('')
 
     const {
         makes, models, generations, modifications,
@@ -89,6 +74,21 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
         resetSelections
     } = useVehicleCatalog(setErrorMessage)
 
+    const [vignetteCheck, setVignetteCheck] = useState(null)
+    const [inspectionCheck, setInspectionCheck] = useState(null)
+    const [inspectionCaptchaSession, setInspectionCaptchaSession] = useState(null)
+    const [inspectionCaptchaCode, setInspectionCaptchaCode] = useState('')
+    const [showInspectionCaptcha, setShowInspectionCaptcha] = useState(false)
+    const [inspectionCheckLoading, setInspectionCheckLoading] = useState(false)
+
+    const [insuranceCheck, setInsuranceCheck] = useState(null)
+    const [insuranceCheckLoading, setInsuranceCheckLoading] = useState(false)
+
+    const [editingOdometer, setEditingOdometer] = useState(false)
+    const [odometerValue, setOdometerValue] = useState('')
+
+    const [viewingDwfFile, setViewingDwfFile] = useState(null)
+
     const fetchServiceLogs = () => {
         if (!vehicle) return
         api.get(`/api/services?vehicleId=${id}`)
@@ -96,7 +96,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
             .catch(err => {
                 console.error(err)
                 setLoading(false)
-                setErrorMessage(err.message || 'Failed to load service logs.')
+                setErrorMessage(err.message || t('service.loadFailedDefault'))
             })
     }
 
@@ -106,7 +106,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
             .then(data => setFiles(data))
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to load files.')
+                setErrorMessage(err.message || t('files.loadFailedDefault'))
             })
     }
 
@@ -115,7 +115,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
             .then(data => setFolders(data))
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to load folders.')
+                setErrorMessage(err.message || t('files.loadFoldersFailedDefault'))
             })
     }
 
@@ -124,7 +124,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
             .then(data => setNotes(data))
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to load notes.')
+                setErrorMessage(err.message || t('notes.loadFailedDefault'))
             })
     }
 
@@ -133,7 +133,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
             .then(data => setReminders(data))
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to load reminders.')
+                setErrorMessage(err.message || t('reminders.failedDefault'))
             })
     }
 
@@ -151,18 +151,18 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
             window.location.href = `${BASE_URL}/api/vehicles/${id}/files/${fileId}/download?token=${token}`;
         } catch (err) {
             console.error(err)
-            setErrorMessage(err.message || 'Failed to download file.')
+            setErrorMessage(err.message || t('files.downloadFailedDefault'))
         }
     };
 
     const handleDeleteFile = (fileId) => {
-        if (!window.confirm('Delete this file? This cannot be undone.')) return
+        if (!window.confirm(t('files.confirmDelete'))) return
         setErrorMessage('')
         api.delete(`/api/vehicles/${id}/files/${fileId}`)
             .then(() => { fetchFiles(); fetchFolders() })
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to delete file.')
+                setErrorMessage(err.message || t('files.deleteFailedDefault'))
             })
     }
 
@@ -172,7 +172,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
             .then(() => { fetchFiles(); fetchFolders() })
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to move file.')
+                setErrorMessage(err.message || t('files.moveFailedDefault'))
             })
     }
 
@@ -184,12 +184,12 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
             .then(() => { setNewFolderName(''); fetchFolders() })
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to create folder.')
+                setErrorMessage(err.message || t('files.createFolderFailedDefault'))
             })
     }
 
     const handleRenameFolder = (folder) => {
-        const newName = window.prompt('Rename folder:', folder.name)
+        const newName = window.prompt(t('files.renamePrompt'), folder.name)
         if (!newName || !newName.trim() || newName.trim() === folder.name) return
 
         setErrorMessage('')
@@ -197,12 +197,12 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
             .then(() => fetchFolders())
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to rename folder.')
+                setErrorMessage(err.message || t('files.renameFolderFailedDefault'))
             })
     }
 
     const handleDeleteFolder = (folderId) => {
-        if (!window.confirm("Delete this folder? Files inside will move back to the root, nothing is deleted.")) {
+        if (!window.confirm(t('files.confirmDeleteFolder'))) {
             return;
         }
 
@@ -215,7 +215,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
             })
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to delete folder.')
+                setErrorMessage(err.message || t('files.deleteFolderFailedDefault'))
             })
     }
 
@@ -252,12 +252,12 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
             })
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to add service log.')
+                setErrorMessage(err.message || t('service.addFailedDefault'))
             })
     }
 
     const handleDeleteServiceLog = (serviceLogId) => {
-        if (!window.confirm("Delete this service log entry? This cannot be undone.")) {
+        if (!window.confirm(t('service.confirmDelete'))) {
             return;
         }
 
@@ -267,7 +267,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
             .then(() => fetchServiceLogs())
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to delete service log.')
+                setErrorMessage(err.message || t('service.deleteFailedDefault'))
             })
     }
 
@@ -297,7 +297,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
             })
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to update service log.')
+                setErrorMessage(err.message || t('service.updateFailedDefault'))
             })
     }
 
@@ -312,7 +312,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
         request.then(() => { setNoteTitle(''); setNoteContent(''); setEditingNoteId(null); fetchNotes(); })
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to save note.')
+                setErrorMessage(err.message || t('notes.saveFailedDefault'))
             })
     }
 
@@ -321,7 +321,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
     }
 
     const handleDeleteNote = (noteId) => {
-        if (!window.confirm("Delete this note? This cannot be undone.")) {
+        if (!window.confirm(t('notes.confirmDelete'))) {
             return;
         }
 
@@ -331,7 +331,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
             .then(() => fetchNotes())
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to delete note.')
+                setErrorMessage(err.message || t('notes.deleteFailedDefault'))
             })
     }
 
@@ -353,7 +353,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
         request.then(() => { clearReminderForm(); fetchReminders(); fetchVignetteCheck(); })
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to save reminder.')
+                setErrorMessage(err.message || t('reminders.failedDefault'))
             })
     }
 
@@ -372,7 +372,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
             .then(() => { fetchReminders(); fetchVignetteCheck(); })
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to reset reminder.')
+                setErrorMessage(err.message || t('reminders.resetFailedDefault'))
             })
     }
 
@@ -384,7 +384,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
     }
 
     const handleDeleteReminder = (reminderId) => {
-        if (!window.confirm("Delete this reminder? This cannot be undone.")) {
+        if (!window.confirm(t('reminders.confirmDelete'))) {
             return;
         }
 
@@ -394,7 +394,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
             .then(() => { fetchReminders(); fetchVignetteCheck(); })
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to delete reminder.')
+                setErrorMessage(err.message || t('reminders.deleteFailedDefault'))
             })
     }
 
@@ -415,7 +415,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
             .then(() => { fetchReminders(); fetchVignetteCheck(); })
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to save vignette reminder.')
+                setErrorMessage(err.message || t('reminders.adoptVignetteFailedDefault'))
             })
     }
 
@@ -430,7 +430,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
             })
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to start inspection check.')
+                setErrorMessage(err.message || t('compliance.startFailedDefault'))
             })
             .finally(() => setInspectionCheckLoading(false))
     }
@@ -446,7 +446,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
         })
             .then(data => {
                 if (data.captchaInvalid) {
-                    setErrorMessage('Could not read the captcha. Fetching a new one.')
+                    setErrorMessage(t('compliance.captchaInvalid'))
                     handleStartInspectionCheck()
                     return
                 }
@@ -458,7 +458,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
             })
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to submit inspection check.')
+                setErrorMessage(err.message || t('compliance.submitFailedDefault'))
             })
             .finally(() => setInspectionCheckLoading(false))
     }
@@ -487,7 +487,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
             .then(() => { fetchReminders(); setInspectionCheck(null) })
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to save inspection reminder.')
+                setErrorMessage(err.message || t('reminders.adoptInspectionFailedDefault'))
             })
     }
 
@@ -512,12 +512,12 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                     ...prev,
                     match: true,
                     enteredExpiryDate: prev.rtaExpiryDate,
-                    message: 'Confirmed by RTA'
+                    message: t('reminders.inspection.confirmed', { date: '' })
                 }))
             })
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to update reminder date.')
+                setErrorMessage(err.message || t('reminders.updateDateFailedDefault'))
             })
     }
 
@@ -531,7 +531,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
             })
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to check insurance status.')
+                setErrorMessage(err.message || t('compliance.checkInsuranceFailedDefault'))
             })
             .finally(() => setInsuranceCheckLoading(false))
     }
@@ -554,7 +554,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
             .then(() => { fetchReminders(); setInsuranceCheck(null) })
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to save insurance reminder.')
+                setErrorMessage(err.message || t('reminders.adoptInsuranceFailedDefault'))
             })
     }
 
@@ -579,12 +579,12 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                     ...prev,
                     match: true,
                     enteredExpiryDate: prev.insurerExpiryDate,
-                    message: 'Confirmed by Guarantee Fund'
+                    message: t('reminders.insurance.confirmed', { date: '' })
                 }))
             })
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to update reminder date.')
+                setErrorMessage(err.message || t('reminders.updateDateFailedDefault'))
             })
     }
 
@@ -627,7 +627,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
             })
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to save vehicle details.')
+                setErrorMessage(err.message || t('specs.failedDefault'))
             })
     }
 
@@ -641,7 +641,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
             })
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to update odometer.')
+                setErrorMessage(err.message || t('vehicle.odometerFailedDefault'))
             })
     }
 
@@ -666,15 +666,15 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
             })
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to update vehicle identity.')
+                setErrorMessage(err.message || t('garage.identity.failedDefault'))
             })
     }
 
     const renderIdentityYearOptions = () => {
-        if (!selectedModification) return <option value="">Choose Modification First</option>
+        if (!selectedModification) return <option value="">{t('garage.chooseModificationFirst')}</option>
 
         if (!isProductionYearRangeValid()) {
-            return <option value="">No Production Years Available</option>
+            return <option value="">{t('garage.noProductionYears')}</option>
         }
 
         const start = selectedModification.startYear
@@ -687,7 +687,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
 
         return (
             <>
-                <option value="">Select Production Year</option>
+                <option value="">{t('garage.selectProductionYear')}</option>
                 {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
             </>
         )
@@ -714,8 +714,8 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
 
     const isDwfFile = (fileName) => /\.(dwf|dwfx)$/i.test(fileName)
 
-    if (loading) return <div style={{ padding: '10px', fontFamily: 'monospace' }}>Loading workspace...</div>
-    if (!vehicle) return <div style={{ padding: '10px', fontFamily: 'monospace' }}><p>Vehicle not found.</p><button onClick={() => navigate('/')}>Back</button></div>
+    if (loading) return <div style={{ padding: '10px', fontFamily: 'monospace' }}>{t('vehicle.loadingWorkspace')}</div>
+    if (!vehicle) return <div style={{ padding: '10px', fontFamily: 'monospace' }}><p>{t('vehicle.notFound')}</p><button onClick={() => navigate('/')}>{t('common.back')}</button></div>
 
     const baseInputStyle = { padding: '4px', border: '1px solid #777', background: '#fff', fontSize: '12px', fontFamily: 'monospace', width: '100%' };
     const baseButtonStyle = { padding: '4px 12px', background: '#e1e1e1', border: '1px solid #777', cursor: 'pointer', fontSize: '12px', color: '#000', fontWeight: 'bold', fontFamily: 'monospace' };
@@ -726,36 +726,36 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
         <div style={{ padding: '10px', fontFamily: 'monospace', color: '#000', backgroundColor: '#fff' }}>
 
             <div style={{ marginBottom: '10px' }}>
-                <button onClick={() => navigate('/')} style={baseButtonStyle}>Back to Garage</button>
+                <button onClick={() => navigate('/')} style={baseButtonStyle}>{t('vehicle.backToGarage')}</button>
             </div>
 
             {errorMessage && (
                 <div style={{ border: '1px solid #a00', color: '#a00', padding: '8px', marginBottom: '15px', fontSize: '11px', fontWeight: 'bold', backgroundColor: '#fff' }}>
-                    ERROR: {errorMessage}
+                    {t('common.errorPrefix')} {errorMessage}
                 </div>
             )}
 
             <table className="vehicle-info-table" style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '15px', border: '2px solid #000' }}>
                 <tbody>
                 <tr>
-                    <td style={{ ...tdStyle, background: '#f0f0f0', fontWeight: 'bold', width: '15%' }}>VEHICLE:</td>
+                    <td style={{ ...tdStyle, background: '#f0f0f0', fontWeight: 'bold', width: '15%' }}>{t('vehicle.label')}</td>
                     <td style={{ ...tdStyle, fontWeight: 'bold' }}>
                         {vehicle.year} {vehicle.make} {vehicle.model}
                         <button
                             onClick={() => showIdentityForm ? setShowIdentityForm(false) : openIdentityForm()}
                             style={{ ...baseButtonStyle, marginLeft: '8px', padding: '1px 4px' }}
                         >
-                            {showIdentityForm ? 'Cancel' : 'Edit'}
+                            {showIdentityForm ? t('common.cancel') : t('common.edit')}
                         </button>
                     </td>
-                    <td style={{ ...tdStyle, background: '#f0f0f0', fontWeight: 'bold', width: '20%' }}>CURRENT ODOMETER:</td>
+                    <td style={{ ...tdStyle, background: '#f0f0f0', fontWeight: 'bold', width: '20%' }}>{t('vehicle.currentOdometer')}</td>
                     <td style={{ ...tdStyle, fontWeight: 'bold', width: '20%' }}>
                         {vehicle.kilometers.toLocaleString()} km
                         <button
                             onClick={() => { setOdometerValue(vehicle.kilometers); setEditingOdometer(true) }}
                             style={{ ...baseButtonStyle, marginLeft: '8px', padding: '1px 4px' }}
                         >
-                            Edit
+                            {t('common.edit')}
                         </button>
                     </td>
                 </tr>
@@ -764,38 +764,38 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
 
             {showIdentityForm && (
                 <div style={{ border: '1px solid #000', padding: '10px', marginBottom: '15px', backgroundColor: '#fafafa' }}>
-                    <div style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '13px' }}>Edit Vehicle Identity</div>
+                    <div style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '13px' }}>{t('garage.identity.editTitle')}</div>
                     <div style={{ fontSize: '11px', color: '#666', marginBottom: '8px' }}>
-                        Re-select the full make/model/generation/modification/year. This replaces the vehicle's current identity.
+                        {t('garage.identity.editHint')}
                     </div>
                     <form onSubmit={handleSaveIdentity} className="responsive-grid">
                         <div>
-                            <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>Make</div>
+                            <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>{t('garage.make')}</div>
                             <select value={selectedMake} onChange={e => setSelectedMake(e.target.value)} required style={baseInputStyle}>
-                                <option value="">Select Make</option>
+                                <option value="">{t('garage.selectMake')}</option>
                                 {makes.map(m => <option key={m} value={m}>{m}</option>)}
                             </select>
                         </div>
 
                         <div>
-                            <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>Model</div>
+                            <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>{t('garage.model')}</div>
                             <select value={selectedModel} onChange={e => setSelectedModel(e.target.value)} disabled={!selectedMake} required style={baseInputStyle}>
-                                <option value="">Select Model</option>
+                                <option value="">{t('garage.selectModel')}</option>
                                 {models.map(m => <option key={m} value={m}>{m}</option>)}
                             </select>
                         </div>
 
                         <div>
-                            <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>Generation</div>
+                            <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>{t('garage.generation')}</div>
                             <select value={selectedGeneration}
                                     onChange={e => setSelectedGeneration(e.target.value)}
                                     disabled={!selectedModel && generations.length <= 1}
                                     required style={baseInputStyle}>
                                 {generations.length <= 1 ? (
-                                    <option value={selectedGeneration}>No Generation Data</option>
+                                    <option value={selectedGeneration}>{t('garage.noGenerationData')}</option>
                                 ) : (
                                     <>
-                                        <option value="">Select Generation</option>
+                                        <option value="">{t('garage.selectGeneration')}</option>
                                         {generations.map(g => <option key={g} value={g}>{g}</option>)}
                                     </>
                                 )}
@@ -803,7 +803,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                         </div>
 
                         <div>
-                            <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>Engine Modification</div>
+                            <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>{t('garage.modification')}</div>
                             <select
                                 value={selectedModification ? JSON.stringify(selectedModification) : ''}
                                 onChange={e => setSelectedModification(e.target.value ? JSON.parse(e.target.value) : null)}
@@ -811,7 +811,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                 required
                                 style={baseInputStyle}
                             >
-                                <option value="">Select Modification</option>
+                                <option value="">{t('garage.selectModification')}</option>
                                 {modifications.map(m => (
                                     <option key={m.id} value={JSON.stringify(m)}>{m.modification}</option>
                                 ))}
@@ -819,7 +819,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                         </div>
 
                         <div>
-                            <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>Year of Manufacture</div>
+                            <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>{t('garage.year')}</div>
                             {isProductionYearRangeValid() ? (
                                 <select value={identityYear} onChange={e => setIdentityYear(e.target.value)} disabled={!selectedModification} required style={baseInputStyle}>
                                     {renderIdentityYearOptions()}
@@ -832,7 +832,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                         </div>
 
                         <div style={{ gridColumn: '1 / -1', marginTop: '4px' }}>
-                            <button type="submit" style={{ ...baseButtonStyle, width: '100%', padding: '6px' }}>Save Vehicle Identity</button>
+                            <button type="submit" style={{ ...baseButtonStyle, width: '100%', padding: '6px' }}>{t('garage.identity.save')}</button>
                         </div>
                     </form>
                 </div>
@@ -840,7 +840,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
 
             {editingOdometer && (
                 <div style={{ border: '1px solid #000', padding: '10px', marginBottom: '15px', backgroundColor: '#fafafa' }}>
-                    <div style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '13px' }}>Edit Odometer</div>
+                    <div style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '13px' }}>{t('vehicle.editOdometer')}</div>
                     <form onSubmit={handleUpdateOdometer} style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
                         <input
                             type="number"
@@ -849,8 +849,8 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                             required
                             style={{ ...baseInputStyle, width: '140px' }}
                         />
-                        <button type="submit" style={{ ...baseButtonStyle, whiteSpace: 'nowrap' }}>Save</button>
-                        <button type="button" onClick={() => setEditingOdometer(false)} style={{ ...baseButtonStyle, whiteSpace: 'nowrap' }}>Cancel</button>
+                        <button type="submit" style={{ ...baseButtonStyle, whiteSpace: 'nowrap' }}>{t('common.save')}</button>
+                        <button type="button" onClick={() => setEditingOdometer(false)} style={{ ...baseButtonStyle, whiteSpace: 'nowrap' }}>{t('common.cancel')}</button>
                     </form>
                 </div>
             )}
@@ -864,7 +864,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                         backgroundColor: activeTab === 'history' ? '#fff' : '#e1e1e1', marginBottom: '-2px', marginRight: '4px'
                     }}
                 >
-                    Maintenance & Records
+                    {t('vehicle.tabs.history')}
                 </button>
                 <button
                     onClick={() => setActiveTab('notes')}
@@ -874,7 +874,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                         backgroundColor: activeTab === 'notes' ? '#fff' : '#e1e1e1', marginBottom: '-2px'
                     }}
                 >
-                    Notes
+                    {t('vehicle.tabs.notes')}
                 </button>
                 <button
                     onClick={() => setActiveTab('electrical')}
@@ -884,7 +884,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                         backgroundColor: activeTab === 'electrical' ? '#fff' : '#e1e1e1', marginBottom: '-2px', marginRight: '4px'
                     }}
                 >
-                    Electrical
+                    {t('vehicle.tabs.electrical')}
                 </button>
                 <button
                     onClick={() => setActiveTab('compliance')}
@@ -894,7 +894,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                         backgroundColor: activeTab === 'compliance' ? '#fff' : '#e1e1e1', marginBottom: '-2px'
                     }}
                 >
-                    Compliance
+                    {t('vehicle.tabs.compliance')}
                 </button>
             </div>
 
@@ -902,41 +902,41 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                 <div>
                     <div style={{ border: '1px solid #000', padding: '10px', marginBottom: '15px', backgroundColor: '#fafafa' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #000', paddingBottom: '4px', marginBottom: '10px' }}>
-                            <span style={{ fontWeight: 'bold', fontSize: '13px' }}>Maintenance Reminders</span>
+                            <span style={{ fontWeight: 'bold', fontSize: '13px' }}>{t('reminders.heading')}</span>
                             <button onClick={() => setShowReminderForm(!showReminderForm)} style={baseButtonStyle}>
-                                {showReminderForm ? "Hide Form" : "Add Reminder"}
+                                {showReminderForm ? t('reminders.hideForm') : t('reminders.addReminder')}
                             </button>
                         </div>
 
                         {showReminderForm && (
                             <form onSubmit={handleSaveReminder} style={{ border: '1px dashed #000', padding: '8px', marginBottom: '10px', backgroundColor: '#fff' }}>
-                                <div style={{ fontWeight: 'bold', marginBottom: '6px', fontSize: '11px' }}>New Reminder</div>
+                                <div style={{ fontWeight: 'bold', marginBottom: '6px', fontSize: '11px' }}>{t('reminders.newReminder')}</div>
                                 <div className="responsive-grid" style={{ marginBottom: '8px' }}>
-                                    <input type="text" placeholder="Reminder Title" value={reminderTitle} onChange={e => setReminderTitle(e.target.value)} required style={baseInputStyle} />
-                                    <input type="text" placeholder="Notes (optional)" value={reminderDesc} onChange={e => setReminderDesc(e.target.value)} style={baseInputStyle} />
-                                    <input type="number" placeholder="Last Done At (km)" value={lastServiceOdo} onChange={e => setLastServiceOdo(e.target.value)} style={baseInputStyle} />
-                                    <input type="number" placeholder="Repeat Every (km)" value={intervalOdo} onChange={e => setIntervalOdo(e.target.value)} style={baseInputStyle} />
+                                    <input type="text" placeholder={t('reminders.titlePlaceholder')} value={reminderTitle} onChange={e => setReminderTitle(e.target.value)} required style={baseInputStyle} />
+                                    <input type="text" placeholder={t('reminders.notesPlaceholder')} value={reminderDesc} onChange={e => setReminderDesc(e.target.value)} style={baseInputStyle} />
+                                    <input type="number" placeholder={t('reminders.lastDoneAtKm')} value={lastServiceOdo} onChange={e => setLastServiceOdo(e.target.value)} style={baseInputStyle} />
+                                    <input type="number" placeholder={t('reminders.repeatEveryKm')} value={intervalOdo} onChange={e => setIntervalOdo(e.target.value)} style={baseInputStyle} />
                                     <input type="date" value={lastServiceDate} onChange={e => setLastServiceDate(e.target.value)} style={baseInputStyle} />
-                                    <input type="number" placeholder="Repeat Every (Months)" value={intervalMonths} onChange={e => setIntervalMonths(e.target.value)} style={baseInputStyle} />
+                                    <input type="number" placeholder={t('reminders.repeatEveryMonths')} value={intervalMonths} onChange={e => setIntervalMonths(e.target.value)} style={baseInputStyle} />
                                 </div>
                                 <div className="action-buttons">
-                                    <button type="submit" style={baseButtonStyle}>Save Ruleset</button>
-                                    <button type="button" onClick={clearReminderForm} style={baseButtonStyle}>Cancel</button>
+                                    <button type="submit" style={baseButtonStyle}>{t('reminders.saveRuleset')}</button>
+                                    <button type="button" onClick={clearReminderForm} style={baseButtonStyle}>{t('common.cancel')}</button>
                                 </div>
                             </form>
                         )}
 
                         {reminders.length === 0 ? (
-                            <div style={{ color: '#555', fontSize: '11px' }}>No reminders set yet.</div>
+                            <div style={{ color: '#555', fontSize: '11px' }}>{t('reminders.none')}</div>
                         ) : (
                             <div className="table-scroll-wrapper">
                                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                     <thead>
                                     <tr>
-                                        <th style={thStyle}>Status</th>
-                                        <th style={thStyle}>Reminder</th>
-                                        <th style={thStyle}>Schedule</th>
-                                        <th style={thStyle}>Actions</th>
+                                        <th style={thStyle}>{t('reminders.table.status')}</th>
+                                        <th style={thStyle}>{t('reminders.table.reminder')}</th>
+                                        <th style={thStyle}>{t('reminders.table.schedule')}</th>
+                                        <th style={thStyle}>{t('reminders.table.actions')}</th>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -945,51 +945,51 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                         return (
                                             <tr key={rem.id} style={{ backgroundColor: isDue ? '#ffebeb' : '#f7fff7' }}>
                                                 <td style={{ ...tdStyle, color: isDue ? '#cc0000' : '#006600', fontWeight: 'bold' }}>
-                                                    {isDue ? "DUE NOW" : "OK"}
+                                                    {isDue ? t('reminders.due') : t('reminders.ok')}
                                                 </td>
                                                 <td style={tdStyle}>
                                                     <span style={{ fontWeight: 'bold' }}>{rem.title}</span>
-                                                    {rem.description && <div style={{ fontSize: '11px', color: '#555' }}>Note: {rem.description}</div>}
+                                                    {rem.description && <div style={{ fontSize: '11px', color: '#555' }}>{t('reminders.note', { description: rem.description })}</div>}
                                                     {rem.sourceType === 'VIGNETTE' && vignetteCheck?.hasLocalReminder && (
                                                         vignetteCheck.bgTollFound ? (
                                                             <div style={{ fontSize: '10px', marginTop: '2px', fontWeight: 'bold', color: vignetteCheck.match ? '#006600' : '#cc0000' }}>
                                                                 {vignetteCheck.match
-                                                                    ? '✓ Confirmed by BGTOLL'
-                                                                    : `✗ BGTOLL mismatch (BGTOLL: ${formatDate(vignetteCheck.bgTollExpiryDate)})`}
+                                                                    ? t('reminders.vignette.confirmed')
+                                                                    : t('reminders.vignette.mismatch', { date: formatDate(vignetteCheck.bgTollExpiryDate) })}
                                                             </div>
                                                         ) : (
                                                             <div style={{ fontSize: '10px', marginTop: '2px', color: '#997a00' }}>
-                                                                ? {vignetteCheck.message}
+                                                                {t('reminders.vignette.unverified', { message: vignetteCheck.message })}
                                                             </div>
                                                         )
                                                     )}
                                                     {rem.sourceType === 'INSPECTION' && (
                                                         inspectionCheck?.hasLocalReminder && inspectionCheck.rtaFound && !inspectionCheck.match ? (
                                                             <div style={{ fontSize: '10px', marginTop: '2px', fontWeight: 'bold', color: '#cc0000' }}>
-                                                                ✗ RTA mismatch (RTA: {formatDate(inspectionCheck.rtaExpiryDate)})
+                                                                {t('reminders.inspection.mismatch', { date: formatDate(inspectionCheck.rtaExpiryDate) })}
                                                             </div>
                                                         ) : rem.verifiedExpiryDate && new Date(rem.verifiedExpiryDate) >= new Date(new Date().toDateString()) ? (
                                                             <div style={{ fontSize: '10px', marginTop: '2px', fontWeight: 'bold', color: '#006600' }}>
-                                                                ✓ Confirmed by RTA until {formatDate(rem.verifiedExpiryDate)}
+                                                                {t('reminders.inspection.confirmed', { date: formatDate(rem.verifiedExpiryDate) })}
                                                             </div>
                                                         ) : (
                                                             <div style={{ fontSize: '10px', marginTop: '2px', color: '#997a00' }}>
-                                                                ? Not verified yet — check under Compliance tab
+                                                                {t('reminders.inspection.unverified')}
                                                             </div>
                                                         )
                                                     )}
                                                     {rem.sourceType === 'INSURANCE' && (
                                                         insuranceCheck?.hasLocalReminder && insuranceCheck.insurerFound && !insuranceCheck.match ? (
                                                             <div style={{ fontSize: '10px', marginTop: '2px', fontWeight: 'bold', color: '#cc0000' }}>
-                                                                ✗ Guarantee Fund mismatch (Guarantee Fund: {formatDate(insuranceCheck.insurerExpiryDate)})
+                                                                {t('reminders.insurance.mismatch', { date: formatDate(insuranceCheck.insurerExpiryDate) })}
                                                             </div>
                                                         ) : rem.verifiedExpiryDate && new Date(rem.verifiedExpiryDate) >= new Date(new Date().toDateString()) ? (
                                                             <div style={{ fontSize: '10px', marginTop: '2px', fontWeight: 'bold', color: '#006600' }}>
-                                                                ✓ Confirmed by Guarantee Fund until {formatDate(rem.verifiedExpiryDate)}
+                                                                {t('reminders.insurance.confirmed', { date: formatDate(rem.verifiedExpiryDate) })}
                                                             </div>
                                                         ) : (
                                                             <div style={{ fontSize: '10px', marginTop: '2px', color: '#997a00' }}>
-                                                                ? Not verified yet — check under Compliance tab
+                                                                {t('reminders.insurance.unverified')}
                                                             </div>
                                                         )
                                                     )}
@@ -997,14 +997,16 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                                 <td style={tdStyle}>
                                                     {['VIGNETTE', 'INSPECTION', 'INSURANCE'].includes(rem.sourceType) && rem.lastServiceAtDate && rem.intervalMonths ? (
                                                         <div style={{ fontWeight: 'bold' }}>
-                                                            Valid until: {formatDate(
-                                                            new Date(new Date(rem.lastServiceAtDate).setMonth(new Date(rem.lastServiceAtDate).getMonth() + rem.intervalMonths)).toISOString().split('T')[0]
-                                                        )}
+                                                            {t('reminders.validUntil', {
+                                                                date: formatDate(
+                                                                    new Date(new Date(rem.lastServiceAtDate).setMonth(new Date(rem.lastServiceAtDate).getMonth() + rem.intervalMonths)).toISOString().split('T')[0]
+                                                                )
+                                                            })}
                                                         </div>
                                                     ) : (
                                                         <>
-                                                            {rem.intervalOdometer && <div>Odo: Every {rem.intervalOdometer.toLocaleString()} km (Last: {rem.lastServiceAtOdometer?.toLocaleString()} km)</div>}
-                                                            {rem.intervalMonths && <div>Time: Every {rem.intervalMonths} Mos (Last: {rem.lastServiceAtDate || "None"})</div>}
+                                                            {rem.intervalOdometer && <div>{t('reminders.odoSchedule', { interval: rem.intervalOdometer.toLocaleString(), last: rem.lastServiceAtOdometer?.toLocaleString() })}</div>}
+                                                            {rem.intervalMonths && <div>{t('reminders.timeSchedule', { months: rem.intervalMonths, last: rem.lastServiceAtDate || "—" })}</div>}
                                                         </>
                                                     )}
                                                 </td>
@@ -1013,20 +1015,20 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                                         {rem.sourceType === 'INSPECTION' ? (
                                                             inspectionCheck?.hasLocalReminder && inspectionCheck.rtaFound && !inspectionCheck.match && (
                                                                 <button onClick={() => handleSetInspectionDateToMatchRta(rem)} style={{ ...baseButtonStyle, background: '#ffe4b3', padding: '2px 4px' }}>
-                                                                    Set date to match RTA
+                                                                    {t('reminders.inspection.setToMatch')}
                                                                 </button>
                                                             )
                                                         ) : rem.sourceType === 'INSURANCE' ? (
                                                             insuranceCheck?.hasLocalReminder && insuranceCheck.insurerFound && !insuranceCheck.match && (
                                                                 <button onClick={() => handleSetInsuranceDateToMatch(rem)} style={{ ...baseButtonStyle, background: '#ffe4b3', padding: '2px 4px' }}>
-                                                                    Set date to match Insurer
+                                                                    {t('reminders.insurance.setToMatch')}
                                                                 </button>
                                                             )
                                                         ) : (
-                                                            <button onClick={() => handleResetReminder(rem)} style={{ ...baseButtonStyle, background: isDue ? '#ffcccc' : '#ccffcc', padding: '2px 4px' }}>Mark Done</button>
+                                                            <button onClick={() => handleResetReminder(rem)} style={{ ...baseButtonStyle, background: isDue ? '#ffcccc' : '#ccffcc', padding: '2px 4px' }}>{t('reminders.markDone')}</button>
                                                         )}
-                                                        <button onClick={() => handleEditReminderSetup(rem)} style={{ ...baseButtonStyle, padding: '2px 4px' }}>Edit</button>
-                                                        <button onClick={() => handleDeleteReminder(rem.id)} style={{ ...baseButtonStyle, padding: '2px 4px', color: '#a00' }}>Delete</button>
+                                                        <button onClick={() => handleEditReminderSetup(rem)} style={{ ...baseButtonStyle, padding: '2px 4px' }}>{t('common.edit')}</button>
+                                                        <button onClick={() => handleDeleteReminder(rem.id)} style={{ ...baseButtonStyle, padding: '2px 4px', color: '#a00' }}>{t('common.delete')}</button>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -1040,91 +1042,91 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
 
                     <div style={{ border: '1px solid #000', padding: '10px', marginBottom: '15px', backgroundColor: '#fafafa' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #000', paddingBottom: '4px', marginBottom: '8px' }}>
-                            <span style={{ fontWeight: 'bold', fontSize: '13px' }}>VEHICLE SPECIFICATIONS</span>
+                            <span style={{ fontWeight: 'bold', fontSize: '13px' }}>{t('specs.heading')}</span>
                             <button onClick={showDetailsForm ? () => setShowDetailsForm(false) : openDetailsForm} style={baseButtonStyle}>
-                                {showDetailsForm ? "Cancel" : "Edit Details"}
+                                {showDetailsForm ? t('common.cancel') : t('specs.editDetails')}
                             </button>
                         </div>
 
                         {!showDetailsForm ? (
                             <div className="responsive-grid" style={{ fontSize: '12px' }}>
-                                <div>VIN: {vehicle.vin || '—'}</div>
-                                <div>Plate: {vehicle.plateNumber || '—'}</div>
-                                <div>Engine: {vehicle.engineCode || '—'}</div>
-                                <div>Transmission: {vehicle.transmissionType || '—'}</div>
-                                <div>Drive: {vehicle.driveType || '—'}</div>
-                                <div>Color: {vehicle.color || '—'}</div>
-                                <div>Fuel: {vehicle.fuelType || '—'}</div>
-                                <div>Tank: {vehicle.fuelTankCapacityLiters ? `${vehicle.fuelTankCapacityLiters} L` : '—'}</div>
-                                <div>Oil: {vehicle.engineOilCapacityLiters ? `${vehicle.engineOilCapacityLiters} L ${vehicle.engineOilType || ''}` : '—'}</div>
-                                <div>Tires: {vehicle.tireSize || '—'}</div>
-                                <div>Purchased: {vehicle.purchaseDate ? formatDate(vehicle.purchaseDate) : '—'}</div>
-                                <div>Price: {vehicle.purchasePrice ? `€${vehicle.purchasePrice}` : '—'}</div>
+                                <div>{t('specs.vin')}: {vehicle.vin || '—'}</div>
+                                <div>{t('specs.plate')}: {vehicle.plateNumber || '—'}</div>
+                                <div>{t('specs.engine')}: {vehicle.engineCode || '—'}</div>
+                                <div>{t('specs.transmission')}: {vehicle.transmissionType || '—'}</div>
+                                <div>{t('specs.drive')}: {vehicle.driveType || '—'}</div>
+                                <div>{t('specs.color')}: {vehicle.color || '—'}</div>
+                                <div>{t('specs.fuel')}: {vehicle.fuelType || '—'}</div>
+                                <div>{t('specs.tank')}: {vehicle.fuelTankCapacityLiters ? `${vehicle.fuelTankCapacityLiters} L` : '—'}</div>
+                                <div>{t('specs.oil')}: {vehicle.engineOilCapacityLiters ? `${vehicle.engineOilCapacityLiters} L ${vehicle.engineOilType || ''}` : '—'}</div>
+                                <div>{t('specs.tires')}: {vehicle.tireSize || '—'}</div>
+                                <div>{t('specs.purchased')}: {vehicle.purchaseDate ? formatDate(vehicle.purchaseDate) : '—'}</div>
+                                <div>{t('specs.price')}: {vehicle.purchasePrice ? `€${vehicle.purchasePrice}` : '—'}</div>
                             </div>
                         ) : (
                             <form onSubmit={handleSaveDetails} className="responsive-grid">
-                                <input placeholder="VIN" value={detailsForm.vin} onChange={e => setDetailsForm({...detailsForm, vin: e.target.value})} style={baseInputStyle} />
-                                <input placeholder="Plate Number" value={detailsForm.plateNumber} onChange={e => setDetailsForm({...detailsForm, plateNumber: e.target.value})} style={baseInputStyle} />
-                                <input placeholder="Engine Code" value={detailsForm.engineCode} onChange={e => setDetailsForm({...detailsForm, engineCode: e.target.value})} style={baseInputStyle} />
+                                <input placeholder={t('specs.vinPlaceholder')} value={detailsForm.vin} onChange={e => setDetailsForm({...detailsForm, vin: e.target.value})} style={baseInputStyle} />
+                                <input placeholder={t('specs.platePlaceholder')} value={detailsForm.plateNumber} onChange={e => setDetailsForm({...detailsForm, plateNumber: e.target.value})} style={baseInputStyle} />
+                                <input placeholder={t('specs.engineCodePlaceholder')} value={detailsForm.engineCode} onChange={e => setDetailsForm({...detailsForm, engineCode: e.target.value})} style={baseInputStyle} />
 
                                 <select value={detailsForm.transmissionType} onChange={e => setDetailsForm({...detailsForm, transmissionType: e.target.value})} style={baseInputStyle}>
-                                    <option value="">Transmission</option>
-                                    <option value="MANUAL">Manual</option>
-                                    <option value="AUTOMATIC">Automatic</option>
-                                    <option value="CVT">CVT</option>
-                                    <option value="DCT">DCT</option>
-                                    <option value="SEMI_AUTOMATIC">Semi-Automatic</option>
+                                    <option value="">{t('specs.transmissionOption')}</option>
+                                    <option value="MANUAL">{t('specs.manual')}</option>
+                                    <option value="AUTOMATIC">{t('specs.automatic')}</option>
+                                    <option value="CVT">{t('specs.cvt')}</option>
+                                    <option value="DCT">{t('specs.dct')}</option>
+                                    <option value="SEMI_AUTOMATIC">{t('specs.semiAutomatic')}</option>
                                 </select>
 
                                 <select value={detailsForm.driveType} onChange={e => setDetailsForm({...detailsForm, driveType: e.target.value})} style={baseInputStyle}>
-                                    <option value="">Drive Type</option>
-                                    <option value="FWD">FWD</option>
-                                    <option value="RWD">RWD</option>
-                                    <option value="AWD">AWD</option>
-                                    <option value="FOUR_WD">4WD</option>
+                                    <option value="">{t('specs.driveTypeOption')}</option>
+                                    <option value="FWD">{t('specs.fwd')}</option>
+                                    <option value="RWD">{t('specs.rwd')}</option>
+                                    <option value="AWD">{t('specs.awd')}</option>
+                                    <option value="FOUR_WD">{t('specs.fourWd')}</option>
                                 </select>
 
                                 <select value={detailsForm.fuelType} onChange={e => setDetailsForm({...detailsForm, fuelType: e.target.value})} style={baseInputStyle}>
-                                    <option value="">Fuel Type</option>
-                                    <option value="PETROL">Petrol</option>
-                                    <option value="DIESEL">Diesel</option>
-                                    <option value="ELECTRIC">Electric</option>
-                                    <option value="HYBRID">Hybrid</option>
-                                    <option value="LPG">LPG</option>
-                                    <option value="CNG">CNG</option>
+                                    <option value="">{t('specs.fuelTypeOption')}</option>
+                                    <option value="PETROL">{t('specs.petrol')}</option>
+                                    <option value="DIESEL">{t('specs.diesel')}</option>
+                                    <option value="ELECTRIC">{t('specs.electric')}</option>
+                                    <option value="HYBRID">{t('specs.hybrid')}</option>
+                                    <option value="LPG">{t('specs.lpg')}</option>
+                                    <option value="CNG">{t('specs.cng')}</option>
                                 </select>
 
-                                <input placeholder="Color" value={detailsForm.color} onChange={e => setDetailsForm({...detailsForm, color: e.target.value})} style={baseInputStyle} />
-                                <input type="number" step="0.1" placeholder="Fuel Tank (L)" value={detailsForm.fuelTankCapacityLiters} onChange={e => setDetailsForm({...detailsForm, fuelTankCapacityLiters: e.target.value})} style={baseInputStyle} />
-                                <input type="number" step="0.01" placeholder="Oil Capacity (L)" value={detailsForm.engineOilCapacityLiters} onChange={e => setDetailsForm({...detailsForm, engineOilCapacityLiters: e.target.value})} style={baseInputStyle} />
-                                <input placeholder="Oil Type (e.g. 5W-30)" value={detailsForm.engineOilType} onChange={e => setDetailsForm({...detailsForm, engineOilType: e.target.value})} style={baseInputStyle} />
-                                <input placeholder="Tire Size" value={detailsForm.tireSize} onChange={e => setDetailsForm({...detailsForm, tireSize: e.target.value})} style={baseInputStyle} />
+                                <input placeholder={t('specs.colorPlaceholder')} value={detailsForm.color} onChange={e => setDetailsForm({...detailsForm, color: e.target.value})} style={baseInputStyle} />
+                                <input type="number" step="0.1" placeholder={t('specs.fuelTankPlaceholder')} value={detailsForm.fuelTankCapacityLiters} onChange={e => setDetailsForm({...detailsForm, fuelTankCapacityLiters: e.target.value})} style={baseInputStyle} />
+                                <input type="number" step="0.01" placeholder={t('specs.oilCapacityPlaceholder')} value={detailsForm.engineOilCapacityLiters} onChange={e => setDetailsForm({...detailsForm, engineOilCapacityLiters: e.target.value})} style={baseInputStyle} />
+                                <input placeholder={t('specs.oilTypePlaceholder')} value={detailsForm.engineOilType} onChange={e => setDetailsForm({...detailsForm, engineOilType: e.target.value})} style={baseInputStyle} />
+                                <input placeholder={t('specs.tireSizePlaceholder')} value={detailsForm.tireSize} onChange={e => setDetailsForm({...detailsForm, tireSize: e.target.value})} style={baseInputStyle} />
 
                                 <div>
-                                    <div style={{ fontSize: '10px' }}>Purchase Date</div>
+                                    <div style={{ fontSize: '10px' }}>{t('specs.purchaseDate')}</div>
                                     <input type="date" value={detailsForm.purchaseDate} onChange={e => setDetailsForm({...detailsForm, purchaseDate: e.target.value})} style={baseInputStyle} />
                                 </div>
-                                <input type="number" step="0.01" placeholder="Purchase Price (€)" value={detailsForm.purchasePrice} onChange={e => setDetailsForm({...detailsForm, purchasePrice: e.target.value})} style={baseInputStyle} />
+                                <input type="number" step="0.01" placeholder={t('specs.purchasePricePlaceholder')} value={detailsForm.purchasePrice} onChange={e => setDetailsForm({...detailsForm, purchasePrice: e.target.value})} style={baseInputStyle} />
 
                                 <div style={{ gridColumn: '1 / -1', borderTop: '1px dashed #000', marginTop: '4px', paddingTop: '6px', fontSize: '11px', fontWeight: 'bold' }}>
-                                    Set dates below to auto-create reminders
+                                    {t('specs.reminderDatesHint')}
                                 </div>
 
                                 <div>
-                                    <div style={{ fontSize: '10px' }}>Insurance Expiry</div>
+                                    <div style={{ fontSize: '10px' }}>{t('specs.insuranceExpiry')}</div>
                                     <input type="date" value={detailsForm.insuranceExpiryDate} onChange={e => setDetailsForm({...detailsForm, insuranceExpiryDate: e.target.value})} style={baseInputStyle} />
                                 </div>
                                 <div>
-                                    <div style={{ fontSize: '10px' }}>Vignette Expiry</div>
+                                    <div style={{ fontSize: '10px' }}>{t('specs.vignetteExpiry')}</div>
                                     <input type="date" value={detailsForm.vignetteExpiryDate} onChange={e => setDetailsForm({...detailsForm, vignetteExpiryDate: e.target.value})} style={baseInputStyle} />
                                 </div>
                                 <div>
-                                    <div style={{ fontSize: '10px' }}>Inspection Due</div>
+                                    <div style={{ fontSize: '10px' }}>{t('specs.inspectionDue')}</div>
                                     <input type="date" value={detailsForm.inspectionDueDate} onChange={e => setDetailsForm({...detailsForm, inspectionDueDate: e.target.value})} style={baseInputStyle} />
                                 </div>
 
                                 <div style={{ gridColumn: '1 / -1', marginTop: '4px' }}>
-                                    <button type="submit" style={{ ...baseButtonStyle, width: '100%', padding: '6px' }}>Save Specifications</button>
+                                    <button type="submit" style={{ ...baseButtonStyle, width: '100%', padding: '6px' }}>{t('specs.save')}</button>
                                 </div>
                             </form>
                         )}
@@ -1132,18 +1134,18 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
 
                     <div className="responsive-grid" style={{ marginBottom: '15px' }}>
                         <div style={{ border: '1px solid #000', padding: '10px', backgroundColor: '#fafafa' }}>
-                            <div style={{ fontWeight: 'bold', borderBottom: '1px solid #000', paddingBottom: '3px', marginBottom: '8px' }}>Add Service Log</div>
+                            <div style={{ fontWeight: 'bold', borderBottom: '1px solid #000', paddingBottom: '3px', marginBottom: '8px' }}>{t('service.add')}</div>
                             <form onSubmit={handleAddServiceLog} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                <input type="text" placeholder="Description" value={description} onChange={e => setDescription(e.target.value)} required style={baseInputStyle} />
-                                <input type="number" step="0.01" placeholder="Cost (€)" value={cost} onChange={e => setCost(e.target.value)} required style={baseInputStyle} />
-                                <input type="number" placeholder="Odometer (km)" value={kilometersAtService} onChange={e => setKilometersAtService(e.target.value)} required style={baseInputStyle} />
+                                <input type="text" placeholder={t('service.descriptionPlaceholder')} value={description} onChange={e => setDescription(e.target.value)} required style={baseInputStyle} />
+                                <input type="number" step="0.01" placeholder={t('service.costPlaceholder')} value={cost} onChange={e => setCost(e.target.value)} required style={baseInputStyle} />
+                                <input type="number" placeholder={t('service.odometerPlaceholder')} value={kilometersAtService} onChange={e => setKilometersAtService(e.target.value)} required style={baseInputStyle} />
                                 <input type="date" value={serviceDate} onChange={e => setServiceDate(e.target.value)} required style={baseInputStyle} />
-                                <button type="submit" style={baseButtonStyle}>Add Entry</button>
+                                <button type="submit" style={baseButtonStyle}>{t('service.addEntry')}</button>
                             </form>
                         </div>
 
                         <div style={{ border: '1px solid #000', padding: '10px', backgroundColor: '#fafafa' }}>
-                            <div style={{ fontWeight: 'bold', borderBottom: '1px solid #000', paddingBottom: '3px', marginBottom: '8px' }}>Attach a File</div>
+                            <div style={{ fontWeight: 'bold', borderBottom: '1px solid #000', paddingBottom: '3px', marginBottom: '8px' }}>{t('files.attach')}</div>
                             <input
                                 type="file"
                                 style={{ fontSize: '11px', width: '100%', marginBottom: '8px', boxSizing: 'border-box' }}
@@ -1156,48 +1158,48 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                         .then(() => { fetchFiles(); fetchFolders() })
                                         .catch(err => {
                                             console.error(err)
-                                            setErrorMessage(err.message || 'Failed to upload file.')
+                                            setErrorMessage(err.message || t('files.uploadFailedDefault'))
                                         })
                                 }}
                             />
                             <div style={{ fontSize: '10px', color: '#666' }}>
                                 {currentFolderId != null
-                                    ? `Uploading into: ${folders.find(f => f.id === currentFolderId)?.name || 'folder'}`
-                                    : 'Upload receipts, manuals, or other documents.'}
+                                    ? t('files.uploadingInto', { folder: folders.find(f => f.id === currentFolderId)?.name || '' })
+                                    : t('files.uploadHint')}
                             </div>
                         </div>
                     </div>
 
                     {modifyModalIsOpen && currentActiveLog && (
                         <div style={{ border: '2px solid #fd7e14', padding: '10px', marginBottom: '15px', backgroundColor: '#fffbe6' }}>
-                            <div style={{ fontWeight: 'bold', color: '#fd7e14', marginBottom: '8px' }}>Edit Service Log {currentActiveLog.id}</div>
+                            <div style={{ fontWeight: 'bold', color: '#fd7e14', marginBottom: '8px' }}>{t('service.editTitle', { id: currentActiveLog.id })}</div>
                             <form onSubmit={handleModifyServiceLog} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                 <input type="text" value={modalDescription} onChange={e => setModalDescription(e.target.value)} required style={baseInputStyle} />
                                 <input type="number" step="0.01" value={modalCost} onChange={e => setModalCost(e.target.value)} required style={baseInputStyle} />
                                 <input type="number" value={modalKilometersAtService} onChange={e => setModalKilometersAtService(e.target.value)} required style={baseInputStyle} />
                                 <input type="date" value={modalServiceDate} onChange={e => setModalServiceDate(e.target.value)} required style={baseInputStyle} />
                                 <div className="action-buttons">
-                                    <button type="submit" style={{ ...baseButtonStyle, background: '#fd7e14', color: '#fff' }}>Save Changes</button>
-                                    <button type="button" onClick={() => setModifyModal(false)} style={baseButtonStyle}>Cancel</button>
+                                    <button type="submit" style={{ ...baseButtonStyle, background: '#fd7e14', color: '#fff' }}>{t('service.saveChanges')}</button>
+                                    <button type="button" onClick={() => setModifyModal(false)} style={baseButtonStyle}>{t('common.cancel')}</button>
                                 </div>
                             </form>
                         </div>
                     )}
 
                     <div style={{ marginBottom: '15px' }}>
-                        <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>Service History</div>
+                        <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>{t('service.history')}</div>
                         {serviceLogs.length === 0 ? (
-                            <div style={{ border: '1px solid #aaa', padding: '8px', color: '#666' }}>No service history yet.</div>
+                            <div style={{ border: '1px solid #aaa', padding: '8px', color: '#666' }}>{t('service.none')}</div>
                         ) : (
                             <div className="table-scroll-wrapper">
                                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                     <thead>
                                     <tr>
-                                        <th style={thStyle}>Date</th>
-                                        <th style={thStyle}>Description</th>
-                                        <th style={thStyle}>Odometer</th>
-                                        <th style={thStyle}>Cost</th>
-                                        <th style={thStyle}>Actions</th>
+                                        <th style={thStyle}>{t('service.table.date')}</th>
+                                        <th style={thStyle}>{t('service.table.description')}</th>
+                                        <th style={thStyle}>{t('service.table.odometer')}</th>
+                                        <th style={thStyle}>{t('service.table.cost')}</th>
+                                        <th style={thStyle}>{t('service.table.actions')}</th>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -1209,8 +1211,8 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                             <td style={tdStyle}>€{log.cost.toFixed(2)}</td>
                                             <td style={tdStyle}>
                                                 <div className="action-buttons">
-                                                    <button onClick={() => handleModifyServiceLogModal(log)} style={{ ...baseButtonStyle, padding: '1px 4px' }}>Edit</button>
-                                                    <button onClick={() => handleDeleteServiceLog(log.id)} style={{ ...baseButtonStyle, padding: '1px 4px', color: '#a00' }}>Delete</button>
+                                                    <button onClick={() => handleModifyServiceLogModal(log)} style={{ ...baseButtonStyle, padding: '1px 4px' }}>{t('common.edit')}</button>
+                                                    <button onClick={() => handleDeleteServiceLog(log.id)} style={{ ...baseButtonStyle, padding: '1px 4px', color: '#a00' }}>{t('common.delete')}</button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -1225,12 +1227,12 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #000', paddingBottom: '3px', marginBottom: '8px' }}>
                             <span style={{ fontWeight: 'bold' }}>
                                 {currentFolderId != null
-                                    ? `DOCUMENT ARCHIVE — ${folders.find(f => f.id === currentFolderId)?.name || ''}`
-                                    : 'DOCUMENT ARCHIVE'}
+                                    ? t('files.archiveInFolder', { folder: folders.find(f => f.id === currentFolderId)?.name || '' })
+                                    : t('files.archive')}
                             </span>
                             {currentFolderId != null && (
                                 <button onClick={handleBackToRoot} style={{ ...baseButtonStyle, padding: '2px 8px' }}>
-                                    ◄ Back to Documents
+                                    {t('files.backToDocuments')}
                                 </button>
                             )}
                         </div>
@@ -1240,12 +1242,12 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                 <form onSubmit={handleCreateFolder} style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
                                     <input
                                         type="text"
-                                        placeholder="New folder name"
+                                        placeholder={t('files.newFolderPlaceholder')}
                                         value={newFolderName}
                                         onChange={e => setNewFolderName(e.target.value)}
                                         style={{ ...baseInputStyle, flex: 1 }}
                                     />
-                                    <button type="submit" style={baseButtonStyle}>New Folder</button>
+                                    <button type="submit" style={baseButtonStyle}>{t('files.newFolder')}</button>
                                 </form>
 
                                 {folders.length > 0 && (
@@ -1269,7 +1271,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                                     cursor: 'pointer',
                                                     userSelect: 'none'
                                                 }}
-                                                title={`${folder.fileCount} item(s)`}
+                                                title={t('files.itemCount', { count: folder.fileCount })}
                                             >
                                                 <div style={{ fontSize: '24px', lineHeight: 1 }}>📁</div>
                                                 <div style={{
@@ -1280,19 +1282,19 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                                 }}>
                                                     {folder.name}
                                                 </div>
-                                                <div style={{ fontSize: '9px', color: '#666' }}>{folder.fileCount} item(s)</div>
+                                                <div style={{ fontSize: '9px', color: '#666' }}>{t('files.itemCount', { count: folder.fileCount })}</div>
                                                 <div style={{ display: 'flex', justifyContent: 'center', gap: '4px', marginTop: '4px' }}>
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); handleRenameFolder(folder) }}
                                                         style={{ ...baseButtonStyle, padding: '0px 3px', fontSize: '9px' }}
                                                     >
-                                                        Rename
+                                                        {t('files.rename')}
                                                     </button>
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder.id) }}
                                                         style={{ ...baseButtonStyle, padding: '0px 3px', fontSize: '9px', color: '#a00' }}
                                                     >
-                                                        Delete
+                                                        {t('common.delete')}
                                                     </button>
                                                 </div>
                                             </div>
@@ -1302,7 +1304,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                             </>
                         )}
 
-                        {files.length === 0 ? <div style={{ fontSize: '11px', color: '#666' }}>No files here yet.</div> : (
+                        {files.length === 0 ? <div style={{ fontSize: '11px', color: '#666' }}>{t('files.none')}</div> : (
                             <div className="table-scroll-wrapper">
                                 <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: '#fff' }}>
                                     <tbody>
@@ -1321,7 +1323,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                                             onClick={() => setViewingDwfFile(file)}
                                                             style={{ ...baseButtonStyle, padding: '1px 4px' }}
                                                         >
-                                                            View
+                                                            {t('files.view')}
                                                         </button>
                                                     )}
                                                     <select
@@ -1332,15 +1334,15 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                                         }}
                                                         style={{ fontSize: '10px', fontFamily: 'monospace' }}
                                                     >
-                                                        <option value="" disabled>Move to...</option>
-                                                        {currentFolderId !== null && <option value="root">Root</option>}
+                                                        <option value="" disabled>{t('files.moveTo')}</option>
+                                                        {currentFolderId !== null && <option value="root">{t('files.root')}</option>}
                                                         {folders
                                                             .filter(f => f.id !== currentFolderId)
                                                             .map(f => (
                                                                 <option key={f.id} value={f.id}>{f.name}</option>
                                                             ))}
                                                     </select>
-                                                    <button onClick={() => handleDeleteFile(file.id)} style={{ ...baseButtonStyle, padding: '1px 4px', color: '#a00' }}>Delete</button>
+                                                    <button onClick={() => handleDeleteFile(file.id)} style={{ ...baseButtonStyle, padding: '1px 4px', color: '#a00' }}>{t('common.delete')}</button>
                                                     {viewingDwfFile && (
                                                         <DwfViewerModal
                                                             vehicleId={id}
@@ -1363,21 +1365,21 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                 <div>
                     <div style={{ border: '1px solid #000', padding: '10px', backgroundColor: '#fafafa', marginBottom: '15px' }}>
                         <div style={{ fontWeight: 'bold', borderBottom: '1px solid #000', paddingBottom: '3px', marginBottom: '8px' }}>
-                            {editingNoteId ? "Edit Note" : "New Note"}
+                            {editingNoteId ? t('notes.edit') : t('notes.new')}
                         </div>
                         <form onSubmit={handleSaveNote} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                            <input type="text" placeholder="Note Title" value={noteTitle} onChange={e => setNoteTitle(e.target.value)} required style={baseInputStyle} />
-                            <textarea placeholder="Write your note here..." value={noteContent} onChange={e => setNoteContent(e.target.value)} required rows="4" style={{ ...baseInputStyle, resize: 'vertical' }} />
+                            <input type="text" placeholder={t('notes.titlePlaceholder')} value={noteTitle} onChange={e => setNoteTitle(e.target.value)} required style={baseInputStyle} />
+                            <textarea placeholder={t('notes.contentPlaceholder')} value={noteContent} onChange={e => setNoteContent(e.target.value)} required rows="4" style={{ ...baseInputStyle, resize: 'vertical' }} />
                             <div className="action-buttons">
-                                <button type="submit" style={baseButtonStyle}>Save Note</button>
-                                {editingNoteId && <button type="button" onClick={() => { setNoteTitle(''); setNoteContent(''); setEditingNoteId(null); }} style={baseButtonStyle}>Cancel</button>}
+                                <button type="submit" style={baseButtonStyle}>{t('notes.save')}</button>
+                                {editingNoteId && <button type="button" onClick={() => { setNoteTitle(''); setNoteContent(''); setEditingNoteId(null); }} style={baseButtonStyle}>{t('common.cancel')}</button>}
                             </div>
                         </form>
                     </div>
 
-                    <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>Saved Notes</div>
+                    <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>{t('notes.heading')}</div>
                     {notes.length === 0 ? (
-                        <div style={{ border: '1px solid #aaa', padding: '8px', color: '#666' }}>No notes yet.</div>
+                        <div style={{ border: '1px solid #aaa', padding: '8px', color: '#666' }}>{t('notes.none')}</div>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                             {notes.map(note => (
@@ -1385,8 +1387,8 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                     <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: '6px', borderBottom: '1px dashed #aaa', paddingBottom: '2px', marginBottom: '4px' }}>
                                         <span style={{ fontWeight: 'bold' }}>{note.title}</span>
                                         <div className="action-buttons">
-                                            <button onClick={() => handleEditNoteSetup(note)} style={{ ...baseButtonStyle, padding: '1px 4px' }}>Edit</button>
-                                            <button onClick={() => handleDeleteNote(note.id)} style={{ ...baseButtonStyle, padding: '1px 4px', color: '#a00' }}>Delete</button>
+                                            <button onClick={() => handleEditNoteSetup(note)} style={{ ...baseButtonStyle, padding: '1px 4px' }}>{t('common.edit')}</button>
+                                            <button onClick={() => handleDeleteNote(note.id)} style={{ ...baseButtonStyle, padding: '1px 4px', color: '#a00' }}>{t('common.delete')}</button>
                                         </div>
                                     </div>
                                     <pre style={{ margin: 0, whiteSpace: 'pre-wrap', fontSize: '11px', background: '#fcfcfc', padding: '4px', border: '1px solid #eee' }}>{note.content}</pre>
@@ -1399,23 +1401,23 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                 <div>
                     <div style={{ border: '1px solid #000', padding: '10px', marginBottom: '15px', backgroundColor: '#fafafa' }}>
                         <div style={{ fontWeight: 'bold', borderBottom: '1px solid #000', paddingBottom: '4px', marginBottom: '8px', fontSize: '13px' }}>
-                            Vignette (BGTOLL)
+                            {t('compliance.vignetteTitle')}
                         </div>
                         {!vehicle.plateNumber ? (
-                            <div style={{ fontSize: '11px', color: '#666' }}>No plate number on file. Add one under Maintenance → Vehicle Specifications.</div>
+                            <div style={{ fontSize: '11px', color: '#666' }}>{t('compliance.noPlate')}</div>
                         ) : vignetteCheck ? (
                             <div style={{ fontSize: '12px' }}>
                                 {vignetteCheck.bgTollFound ? (
                                     <>
-                                        <div>Status: {vignetteCheck.bgTollStatus || 'Active'}</div>
-                                        <div>Expires: {formatDate(vignetteCheck.bgTollExpiryDate)}</div>
+                                        <div>{t('compliance.status', { status: vignetteCheck.bgTollStatus || 'Active' })}</div>
+                                        <div>{t('compliance.expires', { date: formatDate(vignetteCheck.bgTollExpiryDate) })}</div>
                                         {vignetteCheck.hasLocalReminder ? (
                                             <div style={{ fontWeight: 'bold', color: vignetteCheck.match ? '#006600' : '#cc0000', marginTop: '4px' }}>
-                                                {vignetteCheck.match ? '✓ Matches your saved reminder' : '✗ Does not match your saved reminder'}
+                                                {vignetteCheck.match ? t('compliance.matches') : t('compliance.mismatch')}
                                             </div>
                                         ) : (
                                             <button onClick={handleAdoptBgTollVignette} style={{ ...baseButtonStyle, marginTop: '6px' }}>
-                                                Save as Reminder
+                                                {t('compliance.saveAsReminder')}
                                             </button>
                                         )}
                                     </>
@@ -1424,18 +1426,18 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                 )}
                             </div>
                         ) : (
-                            <div style={{ fontSize: '11px', color: '#666' }}>Checking...</div>
+                            <div style={{ fontSize: '11px', color: '#666' }}>{t('compliance.checking')}</div>
                         )}
                     </div>
 
                     <div style={{ border: '1px solid #000', padding: '10px', marginBottom: '15px', backgroundColor: '#fafafa' }}>
                         <div style={{ fontWeight: 'bold', borderBottom: '1px solid #000', paddingBottom: '4px', marginBottom: '8px', fontSize: '13px' }}>
-                            Annual Inspection (RTA)
+                            {t('compliance.inspectionTitle')}
                         </div>
 
                         {showInspectionCaptcha && inspectionCaptchaSession ? (
                             <div>
-                                <div style={{ fontSize: '11px', marginBottom: '8px' }}>Enter the code shown below:</div>
+                                <div style={{ fontSize: '11px', marginBottom: '8px' }}>{t('compliance.captchaHint')}</div>
                                 <img
                                     src={`data:image/jpeg;base64,${inspectionCaptchaSession.captchaImageBase64}`}
                                     alt="Captcha"
@@ -1444,38 +1446,38 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                 <form onSubmit={handleSubmitInspectionCaptcha} style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                                     <input
                                         type="text"
-                                        placeholder="Code from image"
+                                        placeholder={t('compliance.captchaPlaceholder')}
                                         value={inspectionCaptchaCode}
                                         onChange={e => setInspectionCaptchaCode(e.target.value)}
                                         style={{ ...baseInputStyle, width: '140px' }}
                                         autoFocus
                                     />
                                     <button type="submit" style={baseButtonStyle} disabled={inspectionCheckLoading}>
-                                        {inspectionCheckLoading ? 'Checking...' : 'Submit'}
+                                        {inspectionCheckLoading ? t('compliance.checking') : t('compliance.submit')}
                                     </button>
                                     <button type="button" onClick={handleCancelInspectionCaptcha} style={baseButtonStyle}>
-                                        Cancel
+                                        {t('common.cancel')}
                                     </button>
                                 </form>
                             </div>
                         ) : (
                             <div>
                                 {!vehicle.plateNumber ? (
-                                    <div style={{ fontSize: '11px', color: '#666' }}>No plate number on file. Add one under Maintenance → Vehicle Specifications.</div>
+                                    <div style={{ fontSize: '11px', color: '#666' }}>{t('compliance.noPlate')}</div>
                                 ) : (
                                     <>
                                         {inspectionCheck && (
                                             <div style={{ fontSize: '12px', marginBottom: '8px' }}>
                                                 {inspectionCheck.rtaFound ? (
                                                     <>
-                                                        <div>Expires: {formatDate(inspectionCheck.rtaExpiryDate)}</div>
+                                                        <div>{t('compliance.expires', { date: formatDate(inspectionCheck.rtaExpiryDate) })}</div>
                                                         {inspectionCheck.hasLocalReminder ? (
                                                             <div style={{ fontWeight: 'bold', color: inspectionCheck.match ? '#006600' : '#cc0000' }}>
-                                                                {inspectionCheck.match ? '✓ Matches your saved reminder' : '✗ Does not match your saved reminder'}
+                                                                {inspectionCheck.match ? t('compliance.matches') : t('compliance.mismatch')}
                                                             </div>
                                                         ) : (
                                                             <button onClick={handleAdoptRtaInspection} style={{ ...baseButtonStyle, marginTop: '4px' }}>
-                                                                Save as Reminder
+                                                                {t('compliance.saveAsReminder')}
                                                             </button>
                                                         )}
                                                     </>
@@ -1485,7 +1487,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                             </div>
                                         )}
                                         <button onClick={handleStartInspectionCheck} style={baseButtonStyle} disabled={inspectionCheckLoading}>
-                                            {inspectionCheckLoading ? 'Loading...' : 'Check RTA Inspection Status'}
+                                            {inspectionCheckLoading ? t('compliance.loadingButton') : t('compliance.checkInspection')}
                                         </button>
                                     </>
                                 )}
@@ -1495,25 +1497,25 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
 
                     <div style={{ border: '1px solid #000', padding: '10px', backgroundColor: '#fafafa' }}>
                         <div style={{ fontWeight: 'bold', borderBottom: '1px solid #000', paddingBottom: '4px', marginBottom: '8px', fontSize: '13px' }}>
-                            Insurance (Guarantee Fund)
+                            {t('compliance.insuranceTitle')}
                         </div>
                         {!vehicle.plateNumber ? (
-                            <div style={{ fontSize: '11px', color: '#666' }}>No plate number on file. Add one under Maintenance → Vehicle Specifications.</div>
+                            <div style={{ fontSize: '11px', color: '#666' }}>{t('compliance.noPlate')}</div>
                         ) : (
                             <div>
                                 {insuranceCheck && (
                                     <div style={{ fontSize: '12px', marginBottom: '8px' }}>
                                         {insuranceCheck.insurerFound ? (
                                             <>
-                                                <div>Insurer: {insuranceCheck.insurerName}</div>
-                                                <div>Expires: {formatDate(insuranceCheck.insurerExpiryDate)}</div>
+                                                <div>{t('compliance.insurer', { name: insuranceCheck.insurerName })}</div>
+                                                <div>{t('compliance.expires', { date: formatDate(insuranceCheck.insurerExpiryDate) })}</div>
                                                 {insuranceCheck.hasLocalReminder ? (
                                                     <div style={{ fontWeight: 'bold', color: insuranceCheck.match ? '#006600' : '#cc0000' }}>
-                                                        {insuranceCheck.match ? '✓ Matches your saved reminder' : '✗ Does not match your saved reminder'}
+                                                        {insuranceCheck.match ? t('compliance.matches') : t('compliance.mismatch')}
                                                     </div>
                                                 ) : (
                                                     <button onClick={handleAdoptInsurance} style={{ ...baseButtonStyle, marginTop: '4px' }}>
-                                                        Save as Reminder
+                                                        {t('compliance.saveAsReminder')}
                                                     </button>
                                                 )}
                                             </>
@@ -1523,7 +1525,7 @@ function VehicleDashboardView({ vehicles, fetchGarage  }) {
                                     </div>
                                 )}
                                 <button onClick={handleCheckInsurance} style={baseButtonStyle} disabled={insuranceCheckLoading}>
-                                    {insuranceCheckLoading ? 'Checking...' : 'Check Insurance Status'}
+                                    {insuranceCheckLoading ? t('compliance.checking') : t('compliance.checkInsurance')}
                                 </button>
                             </div>
                         )}

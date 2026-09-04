@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '../utils/api';
 
 const LoginForm = ({onLoginSuccess}) => {
+    const { t } = useTranslation();
     const [formData, setFormData] = useState({
         username: '',
         password: ''
@@ -30,26 +32,26 @@ const LoginForm = ({onLoginSuccess}) => {
 
         } catch (error) {
             console.error("Login failed:", error.message);
-            setErrorMessage(error.message || 'Login failed. Please check your credentials.');
+            setErrorMessage(error.message || t('auth.login.failedDefault'));
         }
     };
 
     return (
         <div className="auth-form-container">
             <div className="panel-header">
-                <div className="panel-header-title">WRENCHLOG - SIGN IN</div>
-                <div className="panel-header-subtitle">Authenticate to access your garage</div>
+                <div className="panel-header-title">{t('auth.login.title')}</div>
+                <div className="panel-header-subtitle">{t('auth.login.subtitle')}</div>
             </div>
 
             {errorMessage && (
                 <div className="status-box status-box-error">
-                    ERROR: {errorMessage}
+                    {t('common.errorPrefix')} {errorMessage}
                 </div>
             )}
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <div>
-                    <div className="form-label">Username</div>
+                    <div className="form-label">{t('auth.usernameLabel')}</div>
                     <input
                         type="text"
                         name="username"
@@ -61,7 +63,7 @@ const LoginForm = ({onLoginSuccess}) => {
                 </div>
 
                 <div>
-                    <div className="form-label">Password</div>
+                    <div className="form-label">{t('auth.passwordLabel')}</div>
                     <input
                         type="password"
                         name="password"
@@ -73,7 +75,7 @@ const LoginForm = ({onLoginSuccess}) => {
                 </div>
 
                 <button type="submit" className="form-button">
-                    Sign In
+                    {t('auth.login.submit')}
                 </button>
             </form>
         </div>

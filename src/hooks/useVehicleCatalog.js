@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import api from '../utils/api'
 
 function useVehicleCatalog(onError) {
+    const { t } = useTranslation()
     const [makes, setMakes] = useState([])
     const [models, setModels] = useState([])
     const [generations, setGenerations] = useState([])
@@ -21,7 +23,7 @@ function useVehicleCatalog(onError) {
     useEffect(() => {
         api.get('/api/catalog/makes')
             .then(data => setMakes(data))
-            .catch(err => reportError(err, 'Failed to load vehicle makes.'))
+            .catch(err => reportError(err, t('catalog.errors.makes')))
     }, [])
 
     useEffect(() => {
@@ -36,7 +38,7 @@ function useVehicleCatalog(onError) {
                 setSelectedModification(null)
                 setYear('')
             })
-            .catch(err => reportError(err, 'Failed to load models.'))
+            .catch(err => reportError(err, t('catalog.errors.models')))
     }, [selectedMake])
 
     useEffect(() => {
@@ -63,7 +65,7 @@ function useVehicleCatalog(onError) {
             .catch(err => {
                 setGenerations([]);
                 setSelectedGeneration('');
-                reportError(err, 'Failed to load generations.')
+                reportError(err, t('catalog.errors.generations'))
             })
     }, [selectedModel, selectedMake])
 
@@ -78,7 +80,7 @@ function useVehicleCatalog(onError) {
             })
             .catch(err => {
                 setModifications([]);
-                reportError(err, 'Failed to load modifications.')
+                reportError(err, t('catalog.errors.modifications'))
             });
     }, [selectedGeneration, selectedModel, selectedMake])
 

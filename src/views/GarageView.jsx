@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import api from '../utils/api'
 import useVehicleCatalog from '../hooks/useVehicleCatalog'
 
 function GarageView({ vehicles, loading, fetchGarage, username }){
+    const { t } = useTranslation()
     const navigate = useNavigate()
 
     const [errorMessage, setErrorMessage] = useState('')
@@ -21,10 +23,10 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
     } = useVehicleCatalog(setErrorMessage)
 
     const renderYearOptions = () => {
-        if (!selectedModification) return <option value="">Choose Modification First</option>
+        if (!selectedModification) return <option value="">{t('garage.chooseModificationFirst')}</option>
 
         if (!isProductionYearRangeValid()) {
-            return <option value="">No Production Years Available</option>
+            return <option value="">{t('garage.noProductionYears')}</option>
         }
 
         const start = selectedModification.startYear
@@ -37,7 +39,7 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
 
         return (
             <>
-                <option value="">Select Production Year</option>
+                <option value="">{t('garage.selectProductionYear')}</option>
                 {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
             </>
         )
@@ -62,14 +64,14 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
             })
             .catch(error => {
                 console.error(error)
-                setErrorMessage(error.message || 'Failed to add vehicle.')
+                setErrorMessage(error.message || t('garage.addFailedDefault'))
             })
     }
 
     const handleDeleteVehicle = (vehicleId, e) => {
         e.stopPropagation()
 
-        if (!window.confirm("Delete this vehicle? This cannot be undone.")) {
+        if (!window.confirm(t('garage.confirmDelete'))) {
             return;
         }
 
@@ -81,7 +83,7 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
             })
             .catch(error => {
                 console.error(error)
-                setErrorMessage(error.message || 'Failed to delete vehicle.')
+                setErrorMessage(error.message || t('garage.deleteFailedDefault'))
             })
     }
 
@@ -95,48 +97,48 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
         <div style={{ padding: '10px', fontFamily: 'monospace', color: '#000', backgroundColor: '#fff' }}>
 
             <div style={{ border: '2px solid #000', padding: '8px', marginBottom: '15px', backgroundColor: '#f0f0f0' }}>
-                <div style={{ fontSize: '16px', fontWeight: 'bold' }}>WRENCHLOG — MY GARAGE</div>
-                <div style={{ fontSize: '11px', marginTop: '2px' }}>USER: {username}</div>
+                <div style={{ fontSize: '16px', fontWeight: 'bold' }}>{t('garage.title')}</div>
+                <div style={{ fontSize: '11px', marginTop: '2px' }}>{t('garage.userLabel', { username })}</div>
             </div>
 
             {errorMessage && (
                 <div style={{ border: '1px solid #a00', color: '#a00', padding: '8px', marginBottom: '15px', fontSize: '11px', fontWeight: 'bold', backgroundColor: '#fff' }}>
-                    ERROR: {errorMessage}
+                    {t('common.errorPrefix')} {errorMessage}
                 </div>
             )}
 
             <div style={{ border: '1px solid #000', padding: '10px', backgroundColor: '#fafafa', marginBottom: '20px' }}>
-                <div style={{ fontWeight: 'bold', borderBottom: '1px solid #000', paddingBottom: '3px', marginBottom: '10px', fontSize: '13px' }}>Add New Vehicle</div>
+                <div style={{ fontWeight: 'bold', borderBottom: '1px solid #000', paddingBottom: '3px', marginBottom: '10px', fontSize: '13px' }}>{t('garage.addVehicle')}</div>
 
                 <form onSubmit={handleAddVehicle} className="responsive-grid">
 
                     <div>
-                        <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>Make</div>
+                        <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>{t('garage.make')}</div>
                         <select value={selectedMake} onChange={e => setSelectedMake(e.target.value)} required style={baseSelectStyle}>
-                            <option value="">Select Make</option>
+                            <option value="">{t('garage.selectMake')}</option>
                             {makes.map(m => <option key={m} value={m}>{m}</option>)}
                         </select>
                     </div>
 
                     <div>
-                        <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>Model</div>
+                        <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>{t('garage.model')}</div>
                         <select value={selectedModel} onChange={e => setSelectedModel(e.target.value)} disabled={!selectedMake} required style={baseSelectStyle}>
-                            <option value="">Select Model</option>
+                            <option value="">{t('garage.selectModel')}</option>
                             {models.map(m => <option key={m} value={m}>{m}</option>)}
                         </select>
                     </div>
 
                     <div>
-                        <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>Generation</div>
+                        <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>{t('garage.generation')}</div>
                         <select value={selectedGeneration}
                                 onChange={e => setSelectedGeneration(e.target.value)}
                                 disabled={!selectedModel && generations.length <= 1}
                                 required style={baseSelectStyle}>
                             {generations.length <= 1 ? (
-                                <option value={selectedGeneration}>No Generation Data</option>
+                                <option value={selectedGeneration}>{t('garage.noGenerationData')}</option>
                             ) : (
                                 <>
-                                    <option value="">Select Generation</option>
+                                    <option value="">{t('garage.selectGeneration')}</option>
                                     {generations.map(g => <option key={g} value={g}>{g}</option>)}
                                 </>
                             )}
@@ -144,7 +146,7 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
                     </div>
 
                     <div>
-                        <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>Engine Modification</div>
+                        <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>{t('garage.modification')}</div>
                         <select
                             value={selectedModification ? JSON.stringify(selectedModification) : ''}
                             onChange={e => setSelectedModification(e.target.value ? JSON.parse(e.target.value) : null)}
@@ -152,7 +154,7 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
                             required
                             style={baseSelectStyle}
                         >
-                            <option value="">Select Modification</option>
+                            <option value="">{t('garage.selectModification')}</option>
                             {modifications.map(m => (
                                 <option key={m.id} value={JSON.stringify(m)}>{m.modification}</option>
                             ))}
@@ -160,7 +162,7 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
                     </div>
 
                     <div>
-                        <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>Year of Manufacture</div>
+                        <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>{t('garage.year')}</div>
                         {
                             isProductionYearRangeValid() ? (
                                 <select value={year} onChange={e => setYear(e.target.value)} disabled={!selectedModification} required style={baseSelectStyle}>
@@ -175,10 +177,10 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
                     </div>
 
                     <div>
-                        <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>Current Odometer (km)</div>
+                        <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>{t('garage.odometer')}</div>
                         <input
                             type="number"
-                            placeholder="e.g. 145000"
+                            placeholder={t('garage.odometerPlaceholder')}
                             value={kilometers}
                             onChange={e => setKilometers(e.target.value)}
                             required
@@ -188,31 +190,31 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
 
                     <div style={{ gridColumn: '1 / -1', marginTop: '4px' }}>
                         <button type="submit" style={{ ...baseButtonStyle, width: '100%', padding: '6px' }}>
-                            Add Vehicle
+                            {t('garage.addVehicleButton')}
                         </button>
                     </div>
                 </form>
             </div>
 
             <div style={{ marginBottom: '10px' }}>
-                <div style={{ fontWeight: 'bold', fontSize: '13px', marginBottom: '2px' }}>Vehicles</div>
-                <div style={{ fontSize: '11px', color: '#555', marginBottom: '8px' }}>Click a vehicle to view details</div>
+                <div style={{ fontWeight: 'bold', fontSize: '13px', marginBottom: '2px' }}>{t('garage.vehiclesHeading')}</div>
+                <div style={{ fontSize: '11px', color: '#555', marginBottom: '8px' }}>{t('garage.clickToView')}</div>
 
                 {loading ? (
-                    <div style={{ border: '1px solid #aaa', padding: '8px', fontSize: '12px' }}>Loading your vehicles...</div>
+                    <div style={{ border: '1px solid #aaa', padding: '8px', fontSize: '12px' }}>{t('garage.loadingVehicles')}</div>
                 ) : vehicles.length === 0 ? (
                     <div style={{ border: '1px dashed #777', padding: '12px', fontSize: '12px', color: '#555' }}>
-                        No vehicles yet. Add one above to get started.
+                        {t('garage.noVehicles')}
                     </div>
                 ) : (
                     <div className="table-scroll-wrapper">
                         <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #000' }}>
                             <thead>
                             <tr>
-                                <th style={{ ...thStyle, width: '15%' }}>Make</th>
-                                <th style={thStyle}>Model & Year</th>
-                                <th style={{ ...thStyle, width: '20%' }}>Odometer</th>
-                                <th style={{ ...thStyle, width: '15%', textAlign: 'center' }}>Actions</th>
+                                <th style={{ ...thStyle, width: '15%' }}>{t('garage.table.make')}</th>
+                                <th style={thStyle}>{t('garage.table.modelYear')}</th>
+                                <th style={{ ...thStyle, width: '20%' }}>{t('garage.table.odometer')}</th>
+                                <th style={{ ...thStyle, width: '15%', textAlign: 'center' }}>{t('garage.table.actions')}</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -235,7 +237,7 @@ function GarageView({ vehicles, loading, fetchGarage, username }){
                                                 onClick={(e) => handleDeleteVehicle(vehicle.id, e)}
                                                 style={{ ...baseButtonStyle, color: '#a00', padding: '2px 6px' }}
                                             >
-                                                Delete
+                                                {t('common.delete')}
                                             </button>
                                         </div>
                                     </td>

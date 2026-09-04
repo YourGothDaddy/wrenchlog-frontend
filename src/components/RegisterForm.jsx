@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '../utils/api';
 
 const RegisterForm = () => {
+    const { t } = useTranslation();
     const [formData, setFormData] = useState({
         username: '',
         email: '',
@@ -25,36 +27,36 @@ const RegisterForm = () => {
 
         try {
             await api.post('/api/auth/register', formData);
-            setSuccessMessage('Account created successfully! You can now log in.');
+            setSuccessMessage(t('auth.register.success'));
             setFormData({ username: '', email: '', password: '' });
         } catch (error) {
             console.error('Registration failed:', error.message);
-            setErrorMessage(error.message || 'Something went wrong. Please try again.');
+            setErrorMessage(error.message || t('auth.register.failedDefault'));
         }
     };
 
     return (
         <div className="auth-form-container">
             <div className="panel-header">
-                <div className="panel-header-title">WRENCHLOG - CREATE ACCOUNT</div>
-                <div className="panel-header-subtitle">Register to start tracking your vehicles</div>
+                <div className="panel-header-title">{t('auth.register.title')}</div>
+                <div className="panel-header-subtitle">{t('auth.register.subtitle')}</div>
             </div>
 
             {errorMessage && (
                 <div className="status-box status-box-error">
-                    ERROR: {errorMessage}
+                    {t('common.errorPrefix')} {errorMessage}
                 </div>
             )}
 
             {successMessage && (
                 <div className="status-box status-box-success">
-                    OK: {successMessage}
+                    {t('common.okPrefix')} {successMessage}
                 </div>
             )}
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <div>
-                    <div className="form-label">Username</div>
+                    <div className="form-label">{t('auth.usernameLabel')}</div>
                     <input
                         type="text"
                         name="username"
@@ -66,7 +68,7 @@ const RegisterForm = () => {
                 </div>
 
                 <div>
-                    <div className="form-label">Email Address</div>
+                    <div className="form-label">{t('auth.emailLabel')}</div>
                     <input
                         type="email"
                         name="email"
@@ -78,7 +80,7 @@ const RegisterForm = () => {
                 </div>
 
                 <div>
-                    <div className="form-label">Password</div>
+                    <div className="form-label">{t('auth.passwordLabel')}</div>
                     <input
                         type="password"
                         name="password"
@@ -90,7 +92,7 @@ const RegisterForm = () => {
                 </div>
 
                 <button type="submit" className="form-button">
-                    Register
+                    {t('auth.register.submit')}
                 </button>
             </form>
         </div>

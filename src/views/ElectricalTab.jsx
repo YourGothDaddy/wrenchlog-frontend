@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import api from '../utils/api'
 
 const baseInputStyle = { padding: '4px', border: '1px solid #777', background: '#fff', fontSize: '12px', fontFamily: 'monospace' }
@@ -10,6 +11,7 @@ const stickyThStyle = { ...thStyle, position: 'sticky', left: 0, zIndex: 2 }
 const stickyTdStyle = { ...tdStyle, position: 'sticky', left: 0, zIndex: 1, background: '#f0f0f0' }
 
 function ElectricalTab({ vehicleId, setErrorMessage }) {
+    const { t } = useTranslation()
     const [components, setComponents] = useState([])
     const [selectedComponentId, setSelectedComponentId] = useState(null)
     const [componentDetail, setComponentDetail] = useState(null)
@@ -39,7 +41,7 @@ function ElectricalTab({ vehicleId, setErrorMessage }) {
             .then(data => setComponents(data))
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to load electrical components.')
+                setErrorMessage(err.message || t('electrical.loadComponentsFailedDefault'))
             })
     }
 
@@ -48,7 +50,7 @@ function ElectricalTab({ vehicleId, setErrorMessage }) {
             .then(data => setComponentDetail(data))
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to load component detail.')
+                setErrorMessage(err.message || t('electrical.loadDetailFailedDefault'))
             })
     }
 
@@ -76,12 +78,12 @@ function ElectricalTab({ vehicleId, setErrorMessage }) {
             })
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to create component.')
+                setErrorMessage(err.message || t('electrical.createFailedDefault'))
             })
     }
 
     const handleDeleteComponent = (componentId) => {
-        if (!window.confirm('Delete this component and all its pins and sessions? This cannot be undone.')) return
+        if (!window.confirm(t('electrical.confirmDeleteComponent'))) return
         setErrorMessage('')
         api.delete(`/api/vehicles/${vehicleId}/electrical/components/${componentId}`)
             .then(() => {
@@ -90,7 +92,7 @@ function ElectricalTab({ vehicleId, setErrorMessage }) {
             })
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to delete component.')
+                setErrorMessage(err.message || t('electrical.deleteFailedDefault'))
             })
     }
 
@@ -111,7 +113,7 @@ function ElectricalTab({ vehicleId, setErrorMessage }) {
             })
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to update component.')
+                setErrorMessage(err.message || t('electrical.updateFailedDefault'))
             })
     }
 
@@ -127,18 +129,18 @@ function ElectricalTab({ vehicleId, setErrorMessage }) {
             })
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to add pin.')
+                setErrorMessage(err.message || t('electrical.addPinFailedDefault'))
             })
     }
 
     const handleDeletePin = (pinId) => {
-        if (!window.confirm('Delete this pin? This cannot be undone.')) return
+        if (!window.confirm(t('electrical.confirmDeletePin'))) return
         setErrorMessage('')
         api.delete(`/api/vehicles/${vehicleId}/electrical/components/${selectedComponentId}/pins/${pinId}`)
             .then(() => fetchComponentDetail(selectedComponentId))
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to delete pin. It may already have readings recorded against it.')
+                setErrorMessage(err.message || t('electrical.deletePinFailedDefault'))
             })
     }
 
@@ -148,7 +150,7 @@ function ElectricalTab({ vehicleId, setErrorMessage }) {
             .then(() => fetchComponentDetail(selectedComponentId))
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to reorder pin.')
+                setErrorMessage(err.message || t('electrical.movePinFailedDefault'))
             })
     }
 
@@ -164,18 +166,18 @@ function ElectricalTab({ vehicleId, setErrorMessage }) {
             })
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to create session.')
+                setErrorMessage(err.message || t('electrical.createSessionFailedDefault'))
             })
     }
 
     const handleDeleteSession = (sessionId) => {
-        if (!window.confirm('Delete this session and all its readings? This cannot be undone.')) return
+        if (!window.confirm(t('electrical.confirmDeleteSession'))) return
         setErrorMessage('')
         api.delete(`/api/vehicles/${vehicleId}/electrical/components/${selectedComponentId}/sessions/${sessionId}`)
             .then(() => fetchComponentDetail(selectedComponentId))
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to delete session.')
+                setErrorMessage(err.message || t('electrical.deleteSessionFailedDefault'))
             })
     }
 
@@ -197,7 +199,7 @@ function ElectricalTab({ vehicleId, setErrorMessage }) {
             })
             .catch(err => {
                 console.error(err)
-                setErrorMessage(err.message || 'Failed to save reading.')
+                setErrorMessage(err.message || t('electrical.saveReadingFailedDefault'))
             })
     }
 
@@ -208,22 +210,22 @@ function ElectricalTab({ vehicleId, setErrorMessage }) {
             <div>
                 <div style={{ border: '1px solid #000', padding: '10px', backgroundColor: '#fafafa', marginBottom: '15px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #000', paddingBottom: '4px', marginBottom: '8px' }}>
-                        <span style={{ fontWeight: 'bold', fontSize: '13px' }}>Electrical Components</span>
+                        <span style={{ fontWeight: 'bold', fontSize: '13px' }}>{t('electrical.components')}</span>
                         <button onClick={() => setShowNewComponentForm(!showNewComponentForm)} style={baseButtonStyle}>
-                            {showNewComponentForm ? 'Hide Form' : 'Add Component'}
+                            {showNewComponentForm ? t('electrical.hideForm') : t('electrical.addComponent')}
                         </button>
                     </div>
 
                     {showNewComponentForm && (
                         <form onSubmit={handleCreateComponent} style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
-                            <input placeholder="Component Name (e.g. MAF Sensor)" value={newComponentName} onChange={e => setNewComponentName(e.target.value)} required style={{ ...baseInputStyle, flex: '1 1 200px' }} />
-                            <input placeholder="Description (optional)" value={newComponentDescription} onChange={e => setNewComponentDescription(e.target.value)} style={{ ...baseInputStyle, flex: '1 1 200px' }} />
-                            <button type="submit" style={baseButtonStyle}>Save</button>
+                            <input placeholder={t('electrical.componentNamePlaceholder')} value={newComponentName} onChange={e => setNewComponentName(e.target.value)} required style={{ ...baseInputStyle, flex: '1 1 200px' }} />
+                            <input placeholder={t('electrical.descriptionPlaceholder')} value={newComponentDescription} onChange={e => setNewComponentDescription(e.target.value)} style={{ ...baseInputStyle, flex: '1 1 200px' }} />
+                            <button type="submit" style={baseButtonStyle}>{t('electrical.save')}</button>
                         </form>
                     )}
 
                     {components.length === 0 ? (
-                        <div style={{ fontSize: '12px', color: '#666' }}>No electrical components tracked yet.</div>
+                        <div style={{ fontSize: '12px', color: '#666' }}>{t('electrical.none')}</div>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                             {components.map(c => (
@@ -239,12 +241,12 @@ function ElectricalTab({ vehicleId, setErrorMessage }) {
                                             <input
                                                 value={editComponentDescription}
                                                 onChange={e => setEditComponentDescription(e.target.value)}
-                                                placeholder="Description (optional)"
+                                                placeholder={t('electrical.descriptionPlaceholder')}
                                                 style={{ ...baseInputStyle, flex: '1 1 200px' }}
                                             />
                                             <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
-                                                <button type="submit" style={{ ...smallButtonStyle, whiteSpace: 'nowrap' }}>Save</button>
-                                                <button type="button" onClick={() => setEditingComponentId(null)} style={{ ...smallButtonStyle, whiteSpace: 'nowrap' }}>Cancel</button>
+                                                <button type="submit" style={{ ...smallButtonStyle, whiteSpace: 'nowrap' }}>{t('common.save')}</button>
+                                                <button type="button" onClick={() => setEditingComponentId(null)} style={{ ...smallButtonStyle, whiteSpace: 'nowrap' }}>{t('common.cancel')}</button>
                                             </div>
                                         </form>
                                     ) : (
@@ -256,9 +258,9 @@ function ElectricalTab({ vehicleId, setErrorMessage }) {
                                                 )}
                                             </div>
                                             <div style={{ display: 'flex', gap: '4px', flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                                                <button onClick={() => setSelectedComponentId(c.id)} style={smallButtonStyle}>Open</button>
-                                                <button onClick={() => openComponentEditor(c)} style={smallButtonStyle}>Edit</button>
-                                                <button onClick={() => handleDeleteComponent(c.id)} style={{ ...smallButtonStyle, color: '#a00' }}>Delete</button>
+                                                <button onClick={() => setSelectedComponentId(c.id)} style={smallButtonStyle}>{t('electrical.open')}</button>
+                                                <button onClick={() => openComponentEditor(c)} style={smallButtonStyle}>{t('common.edit')}</button>
+                                                <button onClick={() => handleDeleteComponent(c.id)} style={{ ...smallButtonStyle, color: '#a00' }}>{t('common.delete')}</button>
                                             </div>
                                         </div>
                                     )}
@@ -272,13 +274,13 @@ function ElectricalTab({ vehicleId, setErrorMessage }) {
     }
 
     if (!componentDetail) {
-        return <div style={{ fontSize: '12px' }}>Loading component...</div>
+        return <div style={{ fontSize: '12px' }}>{t('electrical.loadingComponent')}</div>
     }
 
     return (
         <div>
             <div style={{ marginBottom: '10px' }}>
-                <button onClick={() => setSelectedComponentId(null)} style={baseButtonStyle}>Back to Components</button>
+                <button onClick={() => setSelectedComponentId(null)} style={baseButtonStyle}>{t('electrical.backToComponents')}</button>
             </div>
 
             <div style={{ border: '2px solid #000', padding: '8px', marginBottom: '15px', backgroundColor: '#f0f0f0' }}>
@@ -288,31 +290,31 @@ function ElectricalTab({ vehicleId, setErrorMessage }) {
 
             <div style={{ border: '1px solid #000', padding: '10px', backgroundColor: '#fafafa', marginBottom: '15px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #000', paddingBottom: '4px', marginBottom: '8px' }}>
-                    <span style={{ fontWeight: 'bold', fontSize: '13px' }}>Pins</span>
+                    <span style={{ fontWeight: 'bold', fontSize: '13px' }}>{t('electrical.pins')}</span>
                     <button onClick={() => setShowNewPinForm(!showNewPinForm)} style={baseButtonStyle}>
-                        {showNewPinForm ? 'Hide Form' : 'Add Pin'}
+                        {showNewPinForm ? t('electrical.hideForm') : t('electrical.addPin')}
                     </button>
                 </div>
 
                 {showNewPinForm && (
                     <form onSubmit={handleCreatePin} style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
-                        <input placeholder="Pin Name (e.g. Ground)" value={newPinName} onChange={e => setNewPinName(e.target.value)} required style={{ ...baseInputStyle, flex: '1 1 150px' }} />
-                        <input placeholder="Expected Range (optional, e.g. 0.5V - 4.5V)" value={newPinRange} onChange={e => setNewPinRange(e.target.value)} style={{ ...baseInputStyle, flex: '1 1 200px' }} />
-                        <button type="submit" style={baseButtonStyle}>Save</button>
+                        <input placeholder={t('electrical.pinNamePlaceholder')} value={newPinName} onChange={e => setNewPinName(e.target.value)} required style={{ ...baseInputStyle, flex: '1 1 150px' }} />
+                        <input placeholder={t('electrical.pinRangePlaceholder')} value={newPinRange} onChange={e => setNewPinRange(e.target.value)} style={{ ...baseInputStyle, flex: '1 1 200px' }} />
+                        <button type="submit" style={baseButtonStyle}>{t('electrical.save')}</button>
                     </form>
                 )}
 
                 {componentDetail.pins.length === 0 ? (
-                    <div style={{ fontSize: '12px', color: '#666' }}>No pins defined yet. Add pins before creating sessions.</div>
+                    <div style={{ fontSize: '12px', color: '#666' }}>{t('electrical.noPins')}</div>
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         {componentDetail.pins.map((p, index) => (
                             <div key={p.id} style={{ border: '1px solid #000', padding: '4px 8px', backgroundColor: '#fff', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <span style={{ fontWeight: 'bold', color: '#555', minWidth: '28px' }}>#{index + 1}</span>
                                 <span style={{ flex: 1 }}><strong>{p.name}</strong>{p.expectedRange ? ` (${p.expectedRange})` : ''}</span>
-                                <button onClick={() => handleMovePin(p.id, 'up')} disabled={index === 0} style={{ ...smallButtonStyle, padding: '1px 6px' }}>Up</button>
-                                <button onClick={() => handleMovePin(p.id, 'down')} disabled={index === componentDetail.pins.length - 1} style={{ ...smallButtonStyle, padding: '1px 6px' }}>Down</button>
-                                <button onClick={() => handleDeletePin(p.id)} style={{ ...smallButtonStyle, padding: '1px 6px', color: '#a00' }}>Delete</button>
+                                <button onClick={() => handleMovePin(p.id, 'up')} disabled={index === 0} style={{ ...smallButtonStyle, padding: '1px 6px' }}>{t('electrical.up')}</button>
+                                <button onClick={() => handleMovePin(p.id, 'down')} disabled={index === componentDetail.pins.length - 1} style={{ ...smallButtonStyle, padding: '1px 6px' }}>{t('electrical.down')}</button>
+                                <button onClick={() => handleDeletePin(p.id)} style={{ ...smallButtonStyle, padding: '1px 6px', color: '#a00' }}>{t('common.delete')}</button>
                             </div>
                         ))}
                     </div>
@@ -321,36 +323,36 @@ function ElectricalTab({ vehicleId, setErrorMessage }) {
 
             <div style={{ border: '1px solid #000', padding: '10px', backgroundColor: '#fafafa' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #000', paddingBottom: '4px', marginBottom: '8px' }}>
-                    <span style={{ fontWeight: 'bold', fontSize: '13px' }}>Sessions</span>
+                    <span style={{ fontWeight: 'bold', fontSize: '13px' }}>{t('electrical.sessions')}</span>
                     <button
                         onClick={() => setShowNewSessionForm(!showNewSessionForm)}
                         disabled={componentDetail.pins.length === 0}
                         style={baseButtonStyle}
                     >
-                        {showNewSessionForm ? 'Hide Form' : 'New Session'}
+                        {showNewSessionForm ? t('electrical.hideForm') : t('electrical.newSession')}
                     </button>
                 </div>
 
                 {componentDetail.pins.length === 0 && (
-                    <div style={{ fontSize: '11px', color: '#666', marginBottom: '8px' }}>Add at least one pin before creating a session.</div>
+                    <div style={{ fontSize: '11px', color: '#666', marginBottom: '8px' }}>{t('electrical.needPinFirst')}</div>
                 )}
 
                 {showNewSessionForm && (
                     <form onSubmit={handleCreateSession} style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
-                        <input placeholder="Session Label (e.g. Cold Start)" value={newSessionLabel} onChange={e => setNewSessionLabel(e.target.value)} required style={{ ...baseInputStyle, flex: '1 1 200px' }} />
-                        <input placeholder="Notes (optional)" value={newSessionNotes} onChange={e => setNewSessionNotes(e.target.value)} style={{ ...baseInputStyle, flex: '1 1 200px' }} />
-                        <button type="submit" style={baseButtonStyle}>Save</button>
+                        <input placeholder={t('electrical.sessionLabelPlaceholder')} value={newSessionLabel} onChange={e => setNewSessionLabel(e.target.value)} required style={{ ...baseInputStyle, flex: '1 1 200px' }} />
+                        <input placeholder={t('electrical.sessionNotesPlaceholder')} value={newSessionNotes} onChange={e => setNewSessionNotes(e.target.value)} style={{ ...baseInputStyle, flex: '1 1 200px' }} />
+                        <button type="submit" style={baseButtonStyle}>{t('electrical.save')}</button>
                     </form>
                 )}
 
                 {componentDetail.sessions.length === 0 ? (
-                    <div style={{ fontSize: '12px', color: '#666' }}>No sessions recorded yet.</div>
+                    <div style={{ fontSize: '12px', color: '#666' }}>{t('electrical.noSessions')}</div>
                 ) : (
                     <div style={{ overflowX: 'auto', border: '1px solid #aaa' }}>
                         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead>
                             <tr>
-                                <th style={stickyThStyle}>Pin</th>
+                                <th style={stickyThStyle}>{t('electrical.pins')}</th>
                                 {componentDetail.sessions.map(s => (
                                     <th key={s.id} style={thStyle}>
                                         <div>{s.label}</div>
@@ -362,7 +364,7 @@ function ElectricalTab({ vehicleId, setErrorMessage }) {
                                                 {s.notes}
                                             </div>
                                         )}
-                                        <button onClick={() => handleDeleteSession(s.id)} style={{ ...smallButtonStyle, padding: '1px 6px', marginTop: '4px', color: '#a00' }}>Delete</button>
+                                        <button onClick={() => handleDeleteSession(s.id)} style={{ ...smallButtonStyle, padding: '1px 6px', marginTop: '4px', color: '#a00' }}>{t('common.delete')}</button>
                                     </th>
                                 ))}
                             </tr>
@@ -383,21 +385,21 @@ function ElectricalTab({ vehicleId, setErrorMessage }) {
                                                 {isEditing ? (
                                                     <form onSubmit={handleSaveReading} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                                         <input
-                                                            placeholder="Value"
+                                                            placeholder={t('electrical.valuePlaceholder')}
                                                             value={editValue}
                                                             onChange={e => setEditValue(e.target.value)}
                                                             style={{ ...baseInputStyle, width: '100%' }}
                                                             autoFocus
                                                         />
                                                         <input
-                                                            placeholder="Unit (optional)"
+                                                            placeholder={t('electrical.unitPlaceholder')}
                                                             value={editUnit}
                                                             onChange={e => setEditUnit(e.target.value)}
                                                             style={{ ...baseInputStyle, width: '100%' }}
                                                         />
                                                         <div style={{ display: 'flex', gap: '4px' }}>
-                                                            <button type="submit" style={{ ...smallButtonStyle, whiteSpace: 'nowrap' }}>Save</button>
-                                                            <button type="button" onClick={() => setEditingCell(null)} style={{ ...smallButtonStyle, whiteSpace: 'nowrap' }}>Cancel</button>
+                                                            <button type="submit" style={{ ...smallButtonStyle, whiteSpace: 'nowrap' }}>{t('common.save')}</button>
+                                                            <button type="button" onClick={() => setEditingCell(null)} style={{ ...smallButtonStyle, whiteSpace: 'nowrap' }}>{t('common.cancel')}</button>
                                                         </div>
                                                     </form>
                                                 ) : (
