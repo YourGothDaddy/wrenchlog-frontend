@@ -122,7 +122,13 @@
     "vignette": {
       "confirmed": "✓ Потвърдено от BGTOLL",
       "mismatch": "✗ Несъответствие с BGTOLL (BGTOLL: {{date}})",
-      "unverified": "? {{message}}"
+      "unverified": "? {{message}}",
+      "setToMatch": "Задай дата, съвпадаща с BGTOLL"
+    },
+    "adoptTitles": {
+      "vignette": "Подновяване на винетка",
+      "inspection": "Дължим преглед",
+      "insurance": "Подновяване на застраховка"
     },
     "inspection": {
       "mismatch": "✗ Несъответствие с RTA (RTA: {{date}})",

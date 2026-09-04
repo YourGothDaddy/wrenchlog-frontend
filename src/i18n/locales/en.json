@@ -122,7 +122,13 @@
     "vignette": {
       "confirmed": "✓ Confirmed by BGTOLL",
       "mismatch": "✗ BGTOLL mismatch (BGTOLL: {{date}})",
-      "unverified": "? {{message}}"
+      "unverified": "? {{message}}",
+      "setToMatch": "Set date to match BGTOLL"
+    },
+    "adoptTitles": {
+      "vignette": "Vignette renewal",
+      "inspection": "Inspection due",
+      "insurance": "Insurance renewal"
     },
     "inspection": {
       "mismatch": "✗ RTA mismatch (RTA: {{date}})",

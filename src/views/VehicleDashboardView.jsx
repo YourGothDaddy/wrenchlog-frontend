@@ -403,7 +403,7 @@ function VehicleDashboardView({ vehicles, fetchGarage }) {
         const lastServiceAtDate = new Date(vignetteCheck.bgTollExpiryDate)
         lastServiceAtDate.setFullYear(lastServiceAtDate.getFullYear() - 1)
         const payload = {
-            title: 'Vignette renewal',
+            title: t('reminders.adoptTitles.vignette'),
             description: null,
             lastServiceAtOdometer: null,
             intervalOdometer: null,
@@ -416,6 +416,35 @@ function VehicleDashboardView({ vehicles, fetchGarage }) {
             .catch(err => {
                 console.error(err)
                 setErrorMessage(err.message || t('reminders.adoptVignetteFailedDefault'))
+            })
+    }
+
+    const handleSetVignetteDateToMatchBgToll = (rem) => {
+        if (!vignetteCheck?.bgTollExpiryDate) return
+        setErrorMessage('')
+        const lastServiceAtDate = new Date(vignetteCheck.bgTollExpiryDate)
+        lastServiceAtDate.setFullYear(lastServiceAtDate.getFullYear() - 1)
+        const payload = {
+            title: rem.title,
+            description: rem.description,
+            lastServiceAtOdometer: rem.lastServiceAtOdometer,
+            intervalOdometer: rem.intervalOdometer,
+            intervalMonths: 12,
+            lastServiceAtDate: lastServiceAtDate.toISOString().split('T')[0]
+        }
+        api.put(`/api/reminders/${rem.id}?vehicleId=${id}`, payload)
+            .then(() => {
+                fetchReminders()
+                setVignetteCheck(prev => ({
+                    ...prev,
+                    match: true,
+                    enteredExpiryDate: prev.bgTollExpiryDate,
+                    message: t('reminders.vignette.confirmed')
+                }))
+            })
+            .catch(err => {
+                console.error(err)
+                setErrorMessage(err.message || t('reminders.updateDateFailedDefault'))
             })
     }
 
@@ -474,7 +503,7 @@ function VehicleDashboardView({ vehicles, fetchGarage }) {
         const lastServiceAtDate = new Date(inspectionCheck.rtaExpiryDate)
         lastServiceAtDate.setFullYear(lastServiceAtDate.getFullYear() - 1)
         const payload = {
-            title: 'Inspection due',
+            title: t('reminders.adoptTitles.inspection'),
             description: null,
             lastServiceAtOdometer: null,
             intervalOdometer: null,
@@ -541,7 +570,7 @@ function VehicleDashboardView({ vehicles, fetchGarage }) {
         const lastServiceAtDate = new Date(insuranceCheck.insurerExpiryDate)
         lastServiceAtDate.setFullYear(lastServiceAtDate.getFullYear() - 1)
         const payload = {
-            title: 'Insurance renewal',
+            title: t('reminders.adoptTitles.insurance'),
             description: insuranceCheck.insurerName || null,
             lastServiceAtOdometer: null,
             intervalOdometer: null,
@@ -1022,6 +1051,12 @@ function VehicleDashboardView({ vehicles, fetchGarage }) {
                                                             insuranceCheck?.hasLocalReminder && insuranceCheck.insurerFound && !insuranceCheck.match && (
                                                                 <button onClick={() => handleSetInsuranceDateToMatch(rem)} style={{ ...baseButtonStyle, background: '#ffe4b3', padding: '2px 4px' }}>
                                                                     {t('reminders.insurance.setToMatch')}
+                                                                </button>
+                                                            )
+                                                        ) : rem.sourceType === 'VIGNETTE' ? (
+                                                            vignetteCheck?.hasLocalReminder && vignetteCheck.bgTollFound && !vignetteCheck.match && (
+                                                                <button onClick={() => handleSetVignetteDateToMatchBgToll(rem)} style={{ ...baseButtonStyle, background: '#ffe4b3', padding: '2px 4px' }}>
+                                                                    {t('reminders.vignette.setToMatch')}
                                                                 </button>
                                                             )
                                                         ) : (
