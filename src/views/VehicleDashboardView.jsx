@@ -10,6 +10,8 @@ import { baseInputStyle as sharedInputStyle, baseButtonStyle, tdStyle as sharedT
 import useServiceLogs from '../hooks/useServiceLogs'
 import useVehicleNotes from '../hooks/useVehicleNotes'
 import useVehicleFiles from '../hooks/useVehicleFiles'
+import useReminders from '../hooks/useReminders'
+import useComplianceChecks from '../hooks/useComplianceChecks'
 
 function VehicleDashboardView({ vehicles, fetchGarage }) {
     const { t } = useTranslation()
@@ -19,16 +21,6 @@ function VehicleDashboardView({ vehicles, fetchGarage }) {
     const vehicle = vehicles.find(v => v.id === parseInt(id))
 
     const [activeTab, setActiveTab] = useState('history')
-
-    const [reminders, setReminders] = useState([])
-    const [reminderTitle, setReminderTitle] = useState('')
-    const [reminderDesc, setReminderDesc] = useState('')
-    const [lastServiceOdo, setLastServiceOdo] = useState('')
-    const [intervalOdo, setIntervalOdo] = useState('')
-    const [intervalMonths, setIntervalMonths] = useState('')
-    const [lastServiceDate, setLastServiceDate] = useState('')
-    const [showReminderForm, setShowReminderForm] = useState(false)
-    const [editingReminderId, setEditingReminderId] = useState(null)
 
     const [showDetailsForm, setShowDetailsForm] = useState(false)
     const [detailsForm, setDetailsForm] = useState({
@@ -73,6 +65,31 @@ function VehicleDashboardView({ vehicles, fetchGarage }) {
     } = useVehicleFiles(id, vehicle, setErrorMessage)
 
     const {
+        reminders, fetchReminders,
+        reminderTitle, setReminderTitle,
+        reminderDesc, setReminderDesc,
+        lastServiceOdo, setLastServiceOdo,
+        intervalOdo, setIntervalOdo,
+        intervalMonths, setIntervalMonths,
+        lastServiceDate, setLastServiceDate,
+        showReminderForm, setShowReminderForm,
+        editingReminderId,
+        clearReminderForm, handleSaveReminder, handleResetReminder,
+        handleEditReminderSetup, handleDeleteReminder, checkIsDue
+    } = useReminders(id, vehicle, setErrorMessage)
+
+    const {
+        vignetteCheck, fetchVignetteCheck,
+        handleAdoptBgTollVignette, handleSetVignetteDateToMatchBgToll,
+        inspectionCheck, inspectionCaptchaSession, inspectionCaptchaCode, setInspectionCaptchaCode,
+        showInspectionCaptcha, inspectionCheckLoading,
+        handleStartInspectionCheck, handleSubmitInspectionCaptcha, handleCancelInspectionCaptcha,
+        handleAdoptRtaInspection, handleSetInspectionDateToMatchRta,
+        insuranceCheck, insuranceCheckLoading,
+        handleCheckInsurance, handleAdoptInsurance, handleSetInsuranceDateToMatch
+    } = useComplianceChecks(id, setErrorMessage, fetchReminders)
+
+    const {
         makes, models, generations, modifications,
         selectedMake, setSelectedMake,
         selectedModel, setSelectedModel,
@@ -83,324 +100,14 @@ function VehicleDashboardView({ vehicles, fetchGarage }) {
         resetSelections
     } = useVehicleCatalog(setErrorMessage)
 
-    const [vignetteCheck, setVignetteCheck] = useState(null)
-    const [inspectionCheck, setInspectionCheck] = useState(null)
-    const [inspectionCaptchaSession, setInspectionCaptchaSession] = useState(null)
-    const [inspectionCaptchaCode, setInspectionCaptchaCode] = useState('')
-    const [showInspectionCaptcha, setShowInspectionCaptcha] = useState(false)
-    const [inspectionCheckLoading, setInspectionCheckLoading] = useState(false)
-
-    const [insuranceCheck, setInsuranceCheck] = useState(null)
-    const [insuranceCheckLoading, setInsuranceCheckLoading] = useState(false)
-
     const [editingOdometer, setEditingOdometer] = useState(false)
     const [odometerValue, setOdometerValue] = useState('')
 
     const [viewingDwfFile, setViewingDwfFile] = useState(null)
 
-    const fetchReminders = () => {
-        api.get(`/api/reminders?vehicleId=${id}`)
-            .then(data => setReminders(data))
-            .catch(err => {
-                console.error(err)
-                setErrorMessage(err.message || t('reminders.failedDefault'))
-            })
-    }
-
-    const fetchVignetteCheck = () => {
-        if (!vehicle) return
-        api.get(`/api/vehicles/${id}/vignette-check`)
-            .then(data => setVignetteCheck(data))
-            .catch(err => console.error(err))
-    }
-
     useEffect(() => {
-        fetchReminders()
-        fetchVignetteCheck()
+        if (vehicle) fetchVignetteCheck()
     }, [id, vehicle])
-
-
-    const handleSaveReminder = (e) => {
-        e.preventDefault()
-        setErrorMessage('')
-        const payload = {
-            title: reminderTitle,
-            description: reminderDesc,
-            lastServiceAtOdometer: lastServiceOdo ? parseInt(lastServiceOdo) : null,
-            intervalOdometer: intervalOdo ? parseInt(intervalOdo) : null,
-            intervalMonths: intervalMonths ? parseInt(intervalMonths) : null,
-            lastServiceAtDate: lastServiceDate || null
-        }
-        const isEditing = editingReminderId !== null
-        const endpoint = isEditing ? `/api/reminders/${editingReminderId}?vehicleId=${id}` : `/api/reminders?vehicleId=${id}`
-
-        const request = isEditing ? api.put(endpoint, payload) : api.post(endpoint, payload)
-        request.then(() => { clearReminderForm(); fetchReminders(); fetchVignetteCheck(); })
-            .catch(err => {
-                console.error(err)
-                setErrorMessage(err.message || t('reminders.failedDefault'))
-            })
-    }
-
-    const handleResetReminder = (reminder) => {
-        setErrorMessage('')
-        const today = new Date().toISOString().split('T')[0]
-        const payload = {
-            title: reminder.title,
-            description: reminder.description,
-            lastServiceAtOdometer: vehicle.kilometers,
-            intervalOdometer: reminder.intervalOdometer,
-            intervalMonths: reminder.intervalMonths,
-            lastServiceAtDate: today
-        }
-        api.put(`/api/reminders/${reminder.id}?vehicleId=${id}`, payload)
-            .then(() => { fetchReminders(); fetchVignetteCheck(); })
-            .catch(err => {
-                console.error(err)
-                setErrorMessage(err.message || t('reminders.resetFailedDefault'))
-            })
-    }
-
-    const handleEditReminderSetup = (reminder) => {
-        setReminderTitle(reminder.title); setReminderDesc(reminder.description || '');
-        setLastServiceOdo(reminder.lastServiceAtOdometer || ''); setIntervalOdo(reminder.intervalOdometer || '');
-        setIntervalMonths(reminder.intervalMonths || ''); setLastServiceDate(reminder.lastServiceAtDate || '');
-        setEditingReminderId(reminder.id); setShowReminderForm(true);
-    }
-
-    const handleDeleteReminder = (reminderId) => {
-        if (!window.confirm(t('reminders.confirmDelete'))) {
-            return;
-        }
-
-        setErrorMessage('')
-
-        api.delete(`/api/reminders/${reminderId}`)
-            .then(() => { fetchReminders(); fetchVignetteCheck(); })
-            .catch(err => {
-                console.error(err)
-                setErrorMessage(err.message || t('reminders.deleteFailedDefault'))
-            })
-    }
-
-    const handleAdoptBgTollVignette = () => {
-        setErrorMessage('')
-        const lastServiceAtDate = new Date(vignetteCheck.bgTollExpiryDate)
-        lastServiceAtDate.setFullYear(lastServiceAtDate.getFullYear() - 1)
-        const payload = {
-            title: t('reminders.adoptTitles.vignette'),
-            description: null,
-            lastServiceAtOdometer: null,
-            intervalOdometer: null,
-            intervalMonths: 12,
-            lastServiceAtDate: lastServiceAtDate.toISOString().split('T')[0],
-            sourceType: 'VIGNETTE'
-        }
-        api.post(`/api/reminders?vehicleId=${id}`, payload)
-            .then(() => { fetchReminders(); fetchVignetteCheck(); })
-            .catch(err => {
-                console.error(err)
-                setErrorMessage(err.message || t('reminders.adoptVignetteFailedDefault'))
-            })
-    }
-
-    const handleSetVignetteDateToMatchBgToll = (rem) => {
-        if (!vignetteCheck?.bgTollExpiryDate) return
-        setErrorMessage('')
-        const lastServiceAtDate = new Date(vignetteCheck.bgTollExpiryDate)
-        lastServiceAtDate.setFullYear(lastServiceAtDate.getFullYear() - 1)
-        const payload = {
-            title: rem.title,
-            description: rem.description,
-            lastServiceAtOdometer: rem.lastServiceAtOdometer,
-            intervalOdometer: rem.intervalOdometer,
-            intervalMonths: 12,
-            lastServiceAtDate: lastServiceAtDate.toISOString().split('T')[0]
-        }
-        api.put(`/api/reminders/${rem.id}?vehicleId=${id}`, payload)
-            .then(() => {
-                fetchReminders()
-                setVignetteCheck(prev => ({
-                    ...prev,
-                    match: true,
-                    enteredExpiryDate: prev.bgTollExpiryDate,
-                    message: t('reminders.vignette.confirmed')
-                }))
-            })
-            .catch(err => {
-                console.error(err)
-                setErrorMessage(err.message || t('reminders.updateDateFailedDefault'))
-            })
-    }
-
-    const handleStartInspectionCheck = () => {
-        setErrorMessage('')
-        setInspectionCheckLoading(true)
-        api.post(`/api/vehicles/${id}/inspection-check/start`)
-            .then(data => {
-                setInspectionCaptchaSession(data)
-                setShowInspectionCaptcha(true)
-                setInspectionCaptchaCode('')
-            })
-            .catch(err => {
-                console.error(err)
-                setErrorMessage(err.message || t('compliance.startFailedDefault'))
-            })
-            .finally(() => setInspectionCheckLoading(false))
-    }
-
-    const handleSubmitInspectionCaptcha = (e) => {
-        e.preventDefault()
-        if (!inspectionCaptchaCode.trim()) return
-        setErrorMessage('')
-        setInspectionCheckLoading(true)
-        api.post(`/api/vehicles/${id}/inspection-check/submit`, {
-            sessionToken: inspectionCaptchaSession.sessionToken,
-            captchaCode: inspectionCaptchaCode.trim()
-        })
-            .then(data => {
-                if (data.captchaInvalid) {
-                    setErrorMessage(t('compliance.captchaInvalid'))
-                    handleStartInspectionCheck()
-                    return
-                }
-                setInspectionCheck(data)
-                setShowInspectionCaptcha(false)
-                setInspectionCaptchaSession(null)
-                setInspectionCaptchaCode('')
-                fetchReminders()
-            })
-            .catch(err => {
-                console.error(err)
-                setErrorMessage(err.message || t('compliance.submitFailedDefault'))
-            })
-            .finally(() => setInspectionCheckLoading(false))
-    }
-
-    const handleCancelInspectionCaptcha = () => {
-        setShowInspectionCaptcha(false)
-        setInspectionCaptchaSession(null)
-        setInspectionCaptchaCode('')
-    }
-
-    const handleAdoptRtaInspection = () => {
-        setErrorMessage('')
-        const lastServiceAtDate = new Date(inspectionCheck.rtaExpiryDate)
-        lastServiceAtDate.setFullYear(lastServiceAtDate.getFullYear() - 1)
-        const payload = {
-            title: t('reminders.adoptTitles.inspection'),
-            description: null,
-            lastServiceAtOdometer: null,
-            intervalOdometer: null,
-            intervalMonths: 12,
-            lastServiceAtDate: lastServiceAtDate.toISOString().split('T')[0],
-            sourceType: 'INSPECTION',
-            verifiedExpiryDate: inspectionCheck.rtaExpiryDate
-        }
-        api.post(`/api/reminders?vehicleId=${id}`, payload)
-            .then(() => { fetchReminders(); setInspectionCheck(null) })
-            .catch(err => {
-                console.error(err)
-                setErrorMessage(err.message || t('reminders.adoptInspectionFailedDefault'))
-            })
-    }
-
-    const handleSetInspectionDateToMatchRta = (rem) => {
-        if (!inspectionCheck?.rtaExpiryDate) return
-        setErrorMessage('')
-        const lastServiceAtDate = new Date(inspectionCheck.rtaExpiryDate)
-        lastServiceAtDate.setFullYear(lastServiceAtDate.getFullYear() - 1)
-        const payload = {
-            title: rem.title,
-            description: rem.description,
-            lastServiceAtOdometer: rem.lastServiceAtOdometer,
-            intervalOdometer: rem.intervalOdometer,
-            intervalMonths: 12,
-            lastServiceAtDate: lastServiceAtDate.toISOString().split('T')[0],
-            verifiedExpiryDate: inspectionCheck.rtaExpiryDate
-        }
-        api.put(`/api/reminders/${rem.id}?vehicleId=${id}`, payload)
-            .then(() => {
-                fetchReminders()
-                setInspectionCheck(prev => ({
-                    ...prev,
-                    match: true,
-                    enteredExpiryDate: prev.rtaExpiryDate,
-                    message: t('reminders.inspection.confirmed', { date: '' })
-                }))
-            })
-            .catch(err => {
-                console.error(err)
-                setErrorMessage(err.message || t('reminders.updateDateFailedDefault'))
-            })
-    }
-
-    const handleCheckInsurance = () => {
-        setErrorMessage('')
-        setInsuranceCheckLoading(true)
-        api.post(`/api/vehicles/${id}/insurance-check`)
-            .then(data => {
-                setInsuranceCheck(data)
-                fetchReminders()
-            })
-            .catch(err => {
-                console.error(err)
-                setErrorMessage(err.message || t('compliance.checkInsuranceFailedDefault'))
-            })
-            .finally(() => setInsuranceCheckLoading(false))
-    }
-
-    const handleAdoptInsurance = () => {
-        setErrorMessage('')
-        const lastServiceAtDate = new Date(insuranceCheck.insurerExpiryDate)
-        lastServiceAtDate.setFullYear(lastServiceAtDate.getFullYear() - 1)
-        const payload = {
-            title: t('reminders.adoptTitles.insurance'),
-            description: insuranceCheck.insurerName || null,
-            lastServiceAtOdometer: null,
-            intervalOdometer: null,
-            intervalMonths: 12,
-            lastServiceAtDate: lastServiceAtDate.toISOString().split('T')[0],
-            sourceType: 'INSURANCE',
-            verifiedExpiryDate: insuranceCheck.insurerExpiryDate
-        }
-        api.post(`/api/reminders?vehicleId=${id}`, payload)
-            .then(() => { fetchReminders(); setInsuranceCheck(null) })
-            .catch(err => {
-                console.error(err)
-                setErrorMessage(err.message || t('reminders.adoptInsuranceFailedDefault'))
-            })
-    }
-
-    const handleSetInsuranceDateToMatch = (rem) => {
-        if (!insuranceCheck?.insurerExpiryDate) return
-        setErrorMessage('')
-        const lastServiceAtDate = new Date(insuranceCheck.insurerExpiryDate)
-        lastServiceAtDate.setFullYear(lastServiceAtDate.getFullYear() - 1)
-        const payload = {
-            title: rem.title,
-            description: rem.description,
-            lastServiceAtOdometer: rem.lastServiceAtOdometer,
-            intervalOdometer: rem.intervalOdometer,
-            intervalMonths: 12,
-            lastServiceAtDate: lastServiceAtDate.toISOString().split('T')[0],
-            verifiedExpiryDate: insuranceCheck.insurerExpiryDate
-        }
-        api.put(`/api/reminders/${rem.id}?vehicleId=${id}`, payload)
-            .then(() => {
-                fetchReminders()
-                setInsuranceCheck(prev => ({
-                    ...prev,
-                    match: true,
-                    enteredExpiryDate: prev.insurerExpiryDate,
-                    message: t('reminders.insurance.confirmed', { date: '' })
-                }))
-            })
-            .catch(err => {
-                console.error(err)
-                setErrorMessage(err.message || t('reminders.updateDateFailedDefault'))
-            })
-    }
 
     const openDetailsForm = () => {
         setDetailsForm({
@@ -484,6 +191,11 @@ function VehicleDashboardView({ vehicles, fetchGarage }) {
             })
     }
 
+    const handleSaveReminderAndRefreshChecks = (e) => {
+        handleSaveReminder(e)
+        fetchVignetteCheck()
+    }
+
     const renderIdentityYearOptions = () => {
         if (!selectedModification) return <option value="">{t('garage.chooseModificationFirst')}</option>
 
@@ -505,25 +217,6 @@ function VehicleDashboardView({ vehicles, fetchGarage }) {
                 {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
             </>
         )
-    }
-
-    const clearReminderForm = () => {
-        setReminderTitle(''); setReminderDesc(''); setLastServiceOdo('');
-        setIntervalOdo(''); setIntervalMonths(''); setLastServiceDate('');
-        setEditingReminderId(null); setShowReminderForm(false);
-    }
-
-    const checkIsDue = (reminder) => {
-        let odoDue = false; let dateDue = false;
-        if (reminder.intervalOdometer && reminder.lastServiceAtOdometer !== null) {
-            if (vehicle.kilometers >= (reminder.lastServiceAtOdometer + reminder.intervalOdometer)) odoDue = true;
-        }
-        if (reminder.intervalMonths && reminder.lastServiceAtDate) {
-            const lastDate = new Date(reminder.lastServiceAtDate);
-            lastDate.setMonth(lastDate.getMonth() + reminder.intervalMonths);
-            if (new Date() >= lastDate) dateDue = true;
-        }
-        return odoDue || dateDue;
     }
 
     const isDwfFile = (fileName) => /\.(dwf|dwfx)$/i.test(fileName)
@@ -722,7 +415,7 @@ function VehicleDashboardView({ vehicles, fetchGarage }) {
                         </div>
 
                         {showReminderForm && (
-                            <form onSubmit={handleSaveReminder} style={{ border: '1px dashed #000', padding: '8px', marginBottom: '10px', backgroundColor: '#fff' }}>
+                            <form onSubmit={handleSaveReminderAndRefreshChecks} style={{ border: '1px dashed #000', padding: '8px', marginBottom: '10px', backgroundColor: '#fff' }}>
                                 <div style={{ fontWeight: 'bold', marginBottom: '6px', fontSize: '11px' }}>{t('reminders.newReminder')}</div>
                                 <div className="responsive-grid" style={{ marginBottom: '8px' }}>
                                     <input type="text" placeholder={t('reminders.titlePlaceholder')} value={reminderTitle} onChange={e => setReminderTitle(e.target.value)} required style={baseInputStyle} />
