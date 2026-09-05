@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import api from '../utils/api'
 
@@ -16,11 +16,11 @@ function useComplianceChecks(vehicleId, setErrorMessage, fetchReminders) {
     const [insuranceCheck, setInsuranceCheck] = useState(null)
     const [insuranceCheckLoading, setInsuranceCheckLoading] = useState(false)
 
-    const fetchVignetteCheck = () => {
+    const fetchVignetteCheck = useCallback(() => {
         api.get(`/api/vehicles/${vehicleId}/vignette-check`)
             .then(data => setVignetteCheck(data))
             .catch(err => console.error(err))
-    }
+    }, [vehicleId])
 
     const handleAdoptBgTollVignette = () => {
         setErrorMessage('')

@@ -1,17 +1,18 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from "react"
 import { useTranslation } from 'react-i18next'
-import api, { BASE_URL } from '../utils/api'
+import api from '../utils/api'
 import { formatDate } from '../utils/dateFormat'
 import ElectricalTab from './ElectricalTab'
 import DwfViewerModal from '../components/DwfViewerModal'
-import useVehicleCatalog from '../hooks/useVehicleCatalog'
 import { baseInputStyle as sharedInputStyle, baseButtonStyle, tdStyle as sharedTdStyle, thStyle as sharedThStyle } from '../styles/shared'
 import useServiceLogs from '../hooks/useServiceLogs'
 import useVehicleNotes from '../hooks/useVehicleNotes'
 import useVehicleFiles from '../hooks/useVehicleFiles'
 import useReminders from '../hooks/useReminders'
 import useComplianceChecks from '../hooks/useComplianceChecks'
+import useVehicleIdentity from '../hooks/useVehicleIdentity.jsx'
+import useVehicleDetails from '../hooks/useVehicleDetails'
 
 function VehicleDashboardView({ vehicles, fetchGarage }) {
     const { t } = useTranslation()
@@ -22,15 +23,6 @@ function VehicleDashboardView({ vehicles, fetchGarage }) {
 
     const [activeTab, setActiveTab] = useState('history')
 
-    const [showDetailsForm, setShowDetailsForm] = useState(false)
-    const [detailsForm, setDetailsForm] = useState({
-        vin: '', plateNumber: '', engineCode: '', transmissionType: '', driveType: '',
-        color: '', fuelType: '', fuelTankCapacityLiters: '', engineOilCapacityLiters: '',
-        engineOilType: '', tireSize: '', purchaseDate: '', purchasePrice: '',
-        insuranceExpiryDate: '', vignetteExpiryDate: '', inspectionDueDate: ''
-    })
-
-    const [showIdentityForm, setShowIdentityForm] = useState(false)
     const [errorMessage, setErrorMessage] = useState('')
 
     const {
@@ -73,7 +65,6 @@ function VehicleDashboardView({ vehicles, fetchGarage }) {
         intervalMonths, setIntervalMonths,
         lastServiceDate, setLastServiceDate,
         showReminderForm, setShowReminderForm,
-        editingReminderId,
         clearReminderForm, handleSaveReminder, handleResetReminder,
         handleEditReminderSetup, handleDeleteReminder, checkIsDue
     } = useReminders(id, vehicle, setErrorMessage)
@@ -90,15 +81,22 @@ function VehicleDashboardView({ vehicles, fetchGarage }) {
     } = useComplianceChecks(id, setErrorMessage, fetchReminders)
 
     const {
+        showIdentityForm, setShowIdentityForm, openIdentityForm,
         makes, models, generations, modifications,
         selectedMake, setSelectedMake,
         selectedModel, setSelectedModel,
         selectedGeneration, setSelectedGeneration,
         selectedModification, setSelectedModification,
-        year: identityYear, setYear: setIdentityYear,
+        identityYear, setIdentityYear,
         isProductionYearRangeValid,
-        resetSelections
-    } = useVehicleCatalog(setErrorMessage)
+        handleSaveIdentity, renderIdentityYearOptions
+    } = useVehicleIdentity(id, setErrorMessage, fetchGarage)
+
+    const {
+        showDetailsForm, setShowDetailsForm,
+        detailsForm, setDetailsForm,
+        openDetailsForm, handleSaveDetails
+    } = useVehicleDetails(id, vehicle, setErrorMessage, fetchGarage, fetchReminders, fetchVignetteCheck)
 
     const [editingOdometer, setEditingOdometer] = useState(false)
     const [odometerValue, setOdometerValue] = useState('')
@@ -107,50 +105,7 @@ function VehicleDashboardView({ vehicles, fetchGarage }) {
 
     useEffect(() => {
         if (vehicle) fetchVignetteCheck()
-    }, [id, vehicle])
-
-    const openDetailsForm = () => {
-        setDetailsForm({
-            vin: vehicle.vin || '', plateNumber: vehicle.plateNumber || '', engineCode: vehicle.engineCode || '',
-            transmissionType: vehicle.transmissionType || '', driveType: vehicle.driveType || '',
-            color: vehicle.color || '', fuelType: vehicle.fuelType || '',
-            fuelTankCapacityLiters: vehicle.fuelTankCapacityLiters || '',
-            engineOilCapacityLiters: vehicle.engineOilCapacityLiters || '',
-            engineOilType: vehicle.engineOilType || '', tireSize: vehicle.tireSize || '',
-            purchaseDate: vehicle.purchaseDate || '', purchasePrice: vehicle.purchasePrice || '',
-            insuranceExpiryDate: '', vignetteExpiryDate: '', inspectionDueDate: ''
-        })
-        setShowDetailsForm(true)
-    }
-
-    const handleSaveDetails = (e) => {
-        e.preventDefault()
-        setErrorMessage('')
-        const payload = {
-            ...detailsForm,
-            fuelTankCapacityLiters: detailsForm.fuelTankCapacityLiters ? parseFloat(detailsForm.fuelTankCapacityLiters) : null,
-            engineOilCapacityLiters: detailsForm.engineOilCapacityLiters ? parseFloat(detailsForm.engineOilCapacityLiters) : null,
-            purchasePrice: detailsForm.purchasePrice ? parseFloat(detailsForm.purchasePrice) : null,
-            transmissionType: detailsForm.transmissionType || null,
-            driveType: detailsForm.driveType || null,
-            fuelType: detailsForm.fuelType || null,
-            purchaseDate: detailsForm.purchaseDate || null,
-            insuranceExpiryDate: detailsForm.insuranceExpiryDate || null,
-            vignetteExpiryDate: detailsForm.vignetteExpiryDate || null,
-            inspectionDueDate: detailsForm.inspectionDueDate || null
-        }
-        api.put(`/api/vehicles/${id}/details`, payload)
-            .then(() => {
-                setShowDetailsForm(false)
-                fetchGarage()
-                fetchReminders()
-                fetchVignetteCheck()
-            })
-            .catch(err => {
-                console.error(err)
-                setErrorMessage(err.message || t('specs.failedDefault'))
-            })
-    }
+    }, [id, vehicle, fetchVignetteCheck])
 
     const handleUpdateOdometer = (e) => {
         e.preventDefault()
@@ -166,57 +121,9 @@ function VehicleDashboardView({ vehicles, fetchGarage }) {
             })
     }
 
-    const openIdentityForm = () => {
-        resetSelections()
-        setShowIdentityForm(true)
-    }
-
-    const handleSaveIdentity = (e) => {
-        e.preventDefault()
-        setErrorMessage('')
-        const payload = {
-            make: selectedMake,
-            model: `${selectedModel} ${selectedGeneration} (${selectedModification.modification})`,
-            year: identityYear && identityYear !== "" ? parseInt(identityYear) : null
-        }
-        api.put(`/api/vehicles/${id}/identity`, payload)
-            .then(() => {
-                setShowIdentityForm(false)
-                resetSelections()
-                fetchGarage()
-            })
-            .catch(err => {
-                console.error(err)
-                setErrorMessage(err.message || t('garage.identity.failedDefault'))
-            })
-    }
-
     const handleSaveReminderAndRefreshChecks = (e) => {
         handleSaveReminder(e)
         fetchVignetteCheck()
-    }
-
-    const renderIdentityYearOptions = () => {
-        if (!selectedModification) return <option value="">{t('garage.chooseModificationFirst')}</option>
-
-        if (!isProductionYearRangeValid()) {
-            return <option value="">{t('garage.noProductionYears')}</option>
-        }
-
-        const start = selectedModification.startYear
-        const end = selectedModification.endYear ? selectedModification.endYear : 2026
-
-        const yearOptions = []
-        for (let y = start; y <= end; y++) {
-            yearOptions.push(y)
-        }
-
-        return (
-            <>
-                <option value="">{t('garage.selectProductionYear')}</option>
-                {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
-            </>
-        )
     }
 
     const isDwfFile = (fileName) => /\.(dwf|dwfx)$/i.test(fileName)
