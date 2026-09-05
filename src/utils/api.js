@@ -1,5 +1,20 @@
 export const BASE_URL = import.meta.env.VITE_API_URL;
 
+let refreshPromise = null;
+
+async function tryRefresh() {
+    if (!refreshPromise) {
+        refreshPromise = fetch(`${BASE_URL}/api/auth/refresh`, {
+            method: 'POST',
+            credentials: 'include',
+        }).finally(() => {
+            refreshPromise = null;
+        });
+    }
+    const response = await refreshPromise;
+    return response.ok;
+}
+
 async function request(endpoint, options = {}) {
     const url = `${BASE_URL}${endpoint}`;
 
@@ -15,13 +30,21 @@ async function request(endpoint, options = {}) {
         credentials: 'include',
     };
 
-    const response = await fetch(url, config);
+    let response = await fetch(url, config);
 
     const isAuthEndpoint = endpoint.startsWith('/api/auth/');
 
     if ((response.status === 401 || response.status === 403) && !isAuthEndpoint) {
-        window.location.href = '/login';
-        return Promise.reject('Session expired. Please log in again.');
+        const refreshed = await tryRefresh();
+
+        if (refreshed) {
+            response = await fetch(url, config);
+        }
+
+        if (!refreshed || response.status === 401 || response.status === 403) {
+            window.location.href = '/login';
+            return Promise.reject('Session expired. Please log in again.');
+        }
     }
 
     if (response.status === 204) {
@@ -37,7 +60,6 @@ async function request(endpoint, options = {}) {
     if (contentType && contentType.includes('application/json')) {
         return response.json();
     }
-
     return response.text();
 }
 
