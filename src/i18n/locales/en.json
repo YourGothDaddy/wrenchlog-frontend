@@ -12,6 +12,7 @@
   "nav": {
     "brand": "WRENCHLOG",
     "garage": "Garage",
+    "settings": "Settings",
     "user": "USER: {{username}}",
     "logout": "Logout",
     "login": "Login",
@@ -97,6 +98,21 @@
     },
     "notFound": "Vehicle not found.",
     "loadingWorkspace": "Loading workspace..."
+  },
+  "settings": {
+    "heading": "SETTINGS",
+    "language": "Language",
+    "profile": "Profile",
+    "username": "Username",
+    "email": "Email Address",
+    "currentPassword": "Current Password",
+    "saveProfile": "Save Profile",
+    "changePassword": "Change Password",
+    "newPassword": "New Password",
+    "savePassword": "Save Password",
+    "profileUpdated": "Profile updated successfully.",
+    "passwordUpdated": "Password updated successfully.",
+    "updateFailed": "Something went wrong. Please try again."
   },
   "reminders": {
     "heading": "Maintenance Reminders",

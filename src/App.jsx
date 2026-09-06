@@ -10,6 +10,8 @@ import Navbar from './components/Navbar'
 
 import api from './utils/api';
 
+import SettingsView from './views/SettingsView'
+
 import './App.css'
 
 function App(){
@@ -96,6 +98,11 @@ function App(){
                     <Route
                         path="/register"
                         element={!currentUser ? <RegisterForm /> : <Navigate to="/" replace />}
+                    />
+
+                    <Route
+                        path="/settings"
+                        element={currentUser ? <SettingsView currentUser={currentUser} onProfileUpdated={setCurrentUser} /> : <Navigate to="/login" replace />}
                     />
                 </Routes>
             </div>

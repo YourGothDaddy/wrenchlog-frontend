@@ -12,6 +12,7 @@
   "nav": {
     "brand": "WRENCHLOG",
     "garage": "Гараж",
+    "settings": "Настройки",
     "user": "ПОТРЕБИТЕЛ: {{username}}",
     "logout": "Изход",
     "login": "Вход",
@@ -97,6 +98,21 @@
     },
     "notFound": "Превозното средство не е намерено.",
     "loadingWorkspace": "Зареждане на работното пространство..."
+  },
+  "settings": {
+    "heading": "НАСТРОЙКИ",
+    "language": "Език",
+    "profile": "Профил",
+    "username": "Потребителско име",
+    "email": "Имейл адрес",
+    "currentPassword": "Текуща парола",
+    "saveProfile": "Запази профила",
+    "changePassword": "Смяна на парола",
+    "newPassword": "Нова парола",
+    "savePassword": "Запази паролата",
+    "profileUpdated": "Профилът е обновен успешно.",
+    "passwordUpdated": "Паролата е обновена успешно.",
+    "updateFailed": "Нещо се обърка. Моля, опитайте отново."
   },
   "reminders": {
     "heading": "Напомняния за поддръжка",
