@@ -52,46 +52,57 @@ function DocumentArchivePanel({
                                 marginBottom: '15px'
                             }}
                         >
-                            {folders.map(folder => (
+                            {folders.length > 0 && (
                                 <div
-                                    key={folder.id}
-                                    onClick={() => handleOpenFolder(folder.id)}
                                     style={{
-                                        border: '1px solid #999',
-                                        background: '#e8e8e8',
-                                        padding: '8px 4px',
-                                        textAlign: 'center',
-                                        cursor: 'pointer',
-                                        userSelect: 'none'
+                                        display: 'grid',
+                                        gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
+                                        gap: '10px',
+                                        marginBottom: '15px'
                                     }}
-                                    title={t('files.itemCount', { count: folder.fileCount })}
                                 >
-                                    <div style={{ fontSize: '24px', lineHeight: 1 }}>📁</div>
-                                    <div style={{
-                                        fontSize: '11px',
-                                        fontWeight: 'bold',
-                                        marginTop: '4px',
-                                        wordBreak: 'break-word'
-                                    }}>
-                                        {folder.name}
-                                    </div>
-                                    <div style={{ fontSize: '9px', color: '#666' }}>{t('files.itemCount', { count: folder.fileCount })}</div>
-                                    <div style={{ display: 'flex', justifyContent: 'center', gap: '4px', marginTop: '4px' }}>
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); handleRenameFolder(folder) }}
-                                            style={{ ...baseButtonStyle, padding: '0px 3px', fontSize: '9px' }}
+                                    {folders.map(folder => (
+                                        <div
+                                            key={folder.id}
+                                            onClick={() => handleOpenFolder(folder.id)}
+                                            style={{
+                                                border: '1px solid #999',
+                                                background: '#e8e8e8',
+                                                padding: '8px 6px',
+                                                textAlign: 'center',
+                                                cursor: 'pointer',
+                                                userSelect: 'none'
+                                            }}
+                                            title={t('files.itemCount', { count: folder.fileCount })}
                                         >
-                                            {t('files.rename')}
-                                        </button>
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder.id) }}
-                                            style={{ ...baseButtonStyle, padding: '0px 3px', fontSize: '9px', color: '#a00' }}
-                                        >
-                                            {t('common.delete')}
-                                        </button>
-                                    </div>
+                                            <div style={{ fontSize: '24px', lineHeight: 1 }}>📁</div>
+                                            <div style={{
+                                                fontSize: '11px',
+                                                fontWeight: 'bold',
+                                                marginTop: '4px',
+                                                wordBreak: 'break-word'
+                                            }}>
+                                                {folder.name}
+                                            </div>
+                                            <div style={{ fontSize: '9px', color: '#666' }}>{t('files.itemCount', { count: folder.fileCount })}</div>
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '4px', marginTop: '4px' }}>
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleRenameFolder(folder) }}
+                                                    style={{ ...baseButtonStyle, padding: '2px 6px', fontSize: '10px' }}
+                                                >
+                                                    {t('files.rename')}
+                                                </button>
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder.id) }}
+                                                    style={{ ...baseButtonStyle, padding: '2px 6px', fontSize: '10px', color: '#a00' }}
+                                                >
+                                                    {t('common.delete')}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
-                            ))}
+                            )}
                         </div>
                     )}
                 </>

@@ -25,23 +25,27 @@ function VehicleIdentityCard({
                 <tr>
                     <td style={{ ...tdStyle, background: '#f0f0f0', fontWeight: 'bold', width: '15%' }}>{t('vehicle.label')}</td>
                     <td style={{ ...tdStyle, fontWeight: 'bold' }}>
-                        {vehicle.year} {vehicle.make} {vehicle.model}
-                        <button
-                            onClick={() => showIdentityForm ? setShowIdentityForm(false) : openIdentityForm()}
-                            style={{ ...baseButtonStyle, marginLeft: '8px', padding: '1px 4px' }}
-                        >
-                            {showIdentityForm ? t('common.cancel') : t('common.edit')}
-                        </button>
+                        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                            <span>{vehicle.year} {vehicle.make} {vehicle.model}</span>
+                            <button
+                                onClick={() => showIdentityForm ? setShowIdentityForm(false) : openIdentityForm()}
+                                style={{ ...baseButtonStyle, padding: '2px 6px' }}
+                            >
+                                {showIdentityForm ? t('common.cancel') : t('common.edit')}
+                            </button>
+                        </div>
                     </td>
-                    <td style={{ ...tdStyle, background: '#f0f0f0', fontWeight: 'bold', width: '20%' }}>{t('vehicle.currentOdometer')}</td>
-                    <td style={{ ...tdStyle, fontWeight: 'bold', width: '20%' }}>
-                        {vehicle.kilometers.toLocaleString()} km
-                        <button
-                            onClick={() => { setOdometerValue(vehicle.kilometers); setEditingOdometer(true) }}
-                            style={{ ...baseButtonStyle, marginLeft: '8px', padding: '1px 4px' }}
-                        >
-                            {t('common.edit')}
-                        </button>
+                    <td style={{ ...tdStyle, background: '#f0f0f0', fontWeight: 'bold', width: '18%' }}>{t('vehicle.currentOdometer')}</td>
+                    <td style={{ ...tdStyle, fontWeight: 'bold' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                            <span>{vehicle.kilometers.toLocaleString()} km</span>
+                            <button
+                                onClick={() => { setOdometerValue(vehicle.kilometers); setEditingOdometer(true) }}
+                                style={{ ...baseButtonStyle, padding: '2px 6px' }}
+                            >
+                                {t('common.edit')}
+                            </button>
+                        </div>
                     </td>
                 </tr>
                 </tbody>
